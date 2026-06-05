@@ -1,0 +1,39 @@
+# ============================================================
+# Archivos de configuración sensibles (credenciales, DB, etc.)
+# ============================================================
+config/database.php
+
+# ============================================================
+# Carpetas generadas, temporales y de herramientas
+# ============================================================
+tmp_pdf/
+graphify-out/
+scratch/
+
+# ============================================================
+# Archivos del agente / IDE local
+# ============================================================
+.agents/
+.claude/
+
+# ============================================================
+# Archivos de sistema y editores
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# PHPStorm / VSCode
+.idea/
+.vscode/
+
+# Composer
+vendor/
+composer.lock
+
+# Variables de entorno locales
+.env
+.env.local
