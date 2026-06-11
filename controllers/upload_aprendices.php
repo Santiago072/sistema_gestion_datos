@@ -15,11 +15,12 @@
  * Si también tiene competencias/juicios → distribuye a todas las tablas
  */
 require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../libs/SimpleXLSX.php';
-require_once __DIR__ . '/../libs/SimpleXLS.php';
+require_once __DIR__ . '/../services/import/ImportAdapterInterface.php';
+require_once __DIR__ . '/../services/import/ExcelAdapter.php';
+require_once __DIR__ . '/../services/import/CsvAdapter.php';
 
-use Shuchkin\SimpleXLSX;
-use Shuchkin\SimpleXLS;
+use Services\Import\ExcelAdapter;
+use Services\Import\CsvAdapter;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -41,31 +42,15 @@ $db = getDB();
 // ──────────────────────────────────────────
 $allRows = [];
 
-if ($ext === 'xlsx' || $ext === 'xls') {
-    if ($ext === 'xlsx') {
-        $xlsx = SimpleXLSX::parse($file['tmp_name']);
-        $error = SimpleXLSX::parseError();
+try {
+    if ($ext === 'xlsx' || $ext === 'xls') {
+        $adapter = new ExcelAdapter($ext);
     } else {
-        $xlsx = SimpleXLS::parse($file['tmp_name']);
-        $error = SimpleXLS::parseError();
+        $adapter = new CsvAdapter();
     }
-    if (!$xlsx) {
-        echo json_encode(['error' => true, 'message' => 'No se pudo leer el archivo Excel: ' . $error]); exit;
-    }
-    // Leer primera hoja
-    $raw = $xlsx->rows(0);
-    if (empty($raw)) {
-        echo json_encode(['error' => true, 'message' => 'El archivo Excel está vacío']); exit;
-    }
-} else {
-    // CSV
-    $raw = [];
-    $handle = fopen($file['tmp_name'], 'r');
-    while (($row = fgetcsv($handle, 2000, ';')) !== false) {
-        $raw[] = $row;
-    }
-    fclose($handle);
-    if (empty($raw)) { echo json_encode(['error' => true, 'message' => 'CSV vacío']); exit; }
+    $raw = $adapter->parse($file['tmp_name']);
+} catch (\Exception $e) {
+    echo json_encode(['error' => true, 'message' => $e->getMessage()]); exit;
 }
 
 // Buscar la fila de encabezados en las primeras 15 filas
