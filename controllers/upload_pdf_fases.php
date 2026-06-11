@@ -49,60 +49,50 @@ if (!move_uploaded_file($file['tmp_name'], $tmpFile)) {
     exit;
 }
 
-// ── Ruta al script Python ──
-$scriptPath  = __DIR__ . '/scripts/extract_pdf.py';
-$escapedPdf    = escapeshellarg($tmpFile);
-$escapedScript = escapeshellarg($scriptPath);
+// ── Enviar archivo al Microservicio Python (FastAPI) ──
+$apiUrl = 'http://127.0.0.1:8000/extract';
 
-// Ruta absoluta al ejecutable de Python detectada en este sistema
-$pythonExe = 'C:\Users\Usuario\AppData\Local\Programs\Python\Python313\python.exe';
+$cFile = curl_file_create($tmpFile, 'application/pdf', $file['name']);
+$postData = ['file' => $cFile];
 
-// -X utf8 fuerza UTF-8 en stdin/stdout/stderr sin necesitar variables de entorno
-// cmd /c permite ejecutar el comando completo con rutas que tienen espacios
-$command = 'cmd /c ""' . $pythonExe . '" -X utf8 ' . $escapedScript . ' ' . $escapedPdf . ' 2>&1"';
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $apiUrl);
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 
-$output = shell_exec($command);
+$output = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$curlError = curl_error($ch);
+curl_close($ch);
 
-// Limpiar archivo temporal (comentado para depuración)
+// Limpiar archivo temporal PHP
 @unlink($tmpFile);
 
-if ($output === null || trim($output) === '') {
-    // shell_exec puede estar deshabilitado o Python no está en el PATH
+if ($output === false) {
     http_response_code(500);
     echo json_encode([
-        'error' => 'No se pudo ejecutar Python. Verifica que Python esté instalado y en el PATH del sistema. ' .
-                   'Intenta ejecutar "python --version" en tu terminal CMD.',
-        'comando_ejecutado' => $command
+        'error' => 'No se pudo conectar al Microservicio Python. Asegúrate de que FastAPI esté corriendo (uvicorn api:app --port 8000).',
+        'detalle' => $curlError
     ]);
     exit;
 }
 
-// Detectar si hay un error de Python antes del JSON
-// (Python puede imprimir warnings/errors antes del output real)
-$jsonStart = strpos($output, '{');
-if ($jsonStart === false) {
-    http_response_code(500);
-    echo json_encode([
-        'error'  => 'Python no devolvió JSON válido. Detalles: ' . substr($output, 0, 1000)
-    ]);
-    exit;
-}
-
-$jsonOutput = substr($output, $jsonStart);
-$data = json_decode($jsonOutput, true);
+$data = json_decode($output, true);
 
 if (json_last_error() !== JSON_ERROR_NONE || !$data) {
     http_response_code(500);
     echo json_encode([
-        'error'  => 'Error al decodificar la respuesta de Python: ' . json_last_error_msg(),
+        'error'  => 'Error al decodificar la respuesta del microservicio: ' . json_last_error_msg(),
         'output' => substr($output, 0, 500)
     ]);
     exit;
 }
 
-if (!empty($data['error'])) {
+if ($httpCode !== 200 || !empty($data['error'])) {
     http_response_code(422);
-    echo json_encode(['error' => $data['error']]);
+    echo json_encode(['error' => $data['error'] ?? 'Error desconocido del microservicio']);
     exit;
 }
 

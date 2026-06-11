@@ -15,11 +15,14 @@ El sistema sigue un patrón arquitectónico MVC (Modelo-Vista-Controlador).
 
 ## Componentes Clave
 
-1. **Motor de Importación:** Un módulo encargado de recibir, leer y extraer datos desde archivos Excel.
-2. **Motor de Validación:** Verifica que los datos cumplan con las reglas de negocio antes de la persistencia.
-3. **Motor de Reportes (Dashboard):** Genera estadísticas e indicadores a partir de los datos consolidados.
+1. **Motor de Importación (Strategy/Adapter):** Un módulo estructurado (`services/import/`) encargado de recibir, leer y extraer datos desde archivos. Usa el patrón Adapter (`ImportAdapterInterface`) para desacoplar el sistema de librerías específicas (ej. `ExcelAdapter`, `CsvAdapter`).
+2. **Sistema de Colas (Asíncrono):** Gestor de tareas en MySQL que encola los archivos subidos para que un proceso en segundo plano (Worker) los evalúe sin bloquear la interfaz web.
+3. **Motor de Validación:** Verifica que los datos cumplan con las reglas de negocio antes de la persistencia.
+4. **Motor de Reportes (Dashboard):** Genera estadísticas e indicadores a partir de los datos consolidados.
 
 ## Tecnologías Utilizadas
-- **Backend:** PHP (con librerías para lectura de Excel, como PhpSpreadsheet si aplica).
+- **Backend PHP:** PHP (Motor web) con patrón MVC.
+- **Microservicio Python:** FastAPI y pdfplumber (para la extracción avanzada de datos desde PDFs del SENA).
+- **Procesamiento Asíncrono:** Sistema de Colas basado en MySQL y Worker (PHP CLI) para tareas pesadas.
 - **Frontend:** HTML, CSS, JavaScript.
 - **Base de Datos:** MySQL.
