@@ -355,7 +355,6 @@ function procesarExcelAprendices(array $job, \PDO $db, JobQueue $queue) {
         if (empty($fechaJuicio)) $fechaJuicio = date('Y-m-d H:i:s');
 
         try {
-            $db->exec("SAVEPOINT row_{$row_num}");
             $stmtJuicio->execute([':tipo' => $tipoJuicio, ':fecha' => $fechaJuicio, ':func' => (int)$funcDoc, ':ficha' => $ficha ?: null, ':aprendiz' => $doc ?: null]);
             $idJuicio = $db->lastInsertId();
 
@@ -365,7 +364,6 @@ function procesarExcelAprendices(array $job, \PDO $db, JobQueue $queue) {
             $stmtCompetencia->execute([':nombre' => $compNombre, ':codigo' => $compCodigo, ':aprendiz' => $doc, ':ficha' => $ficha ?: null, ':resultado' => $idResultado]);
             $cntJuicios++;
         } catch (\PDOException $e) {
-            $db->exec("ROLLBACK TO SAVEPOINT row_{$row_num}");
             $msg = $e->getMessage();
             $errores[] = "Fila {$row_num} (juicio {$doc}): " . $msg;
             $queue->logError($job['id'], $row_num, "Error guardando juicio para aprendiz {$doc}: " . $msg);
