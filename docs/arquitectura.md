@@ -15,8 +15,16 @@ El sistema sigue un patrón arquitectónico MVC (Modelo-Vista-Controlador).
 
 ## Componentes Clave
 
-1. **Motor de Importación (Strategy/Adapter):** Un módulo estructurado (`services/import/`) encargado de recibir, leer y extraer datos desde archivos. Usa el patrón Adapter (`ImportAdapterInterface`) para desacoplar el sistema de librerías específicas (ej. `ExcelAdapter`, `CsvAdapter`).
-2. **Sistema de Colas (Asíncrono):** Gestor de tareas en MySQL que encola los archivos subidos para que un proceso en segundo plano (Worker) los evalúe sin bloquear la interfaz web.
+1. **Importación de PDF:**
+- Se mantiene un script independiente en Python (`extract_pdf.py`).
+- PHP lo invoca síncronamente mediante `shell_exec`.
+
+**Para Importación de Excel:**
+- La subida se recibe y se guarda en disco.
+- Se crea un registro en `trabajos_importacion` con estado `pendiente`.
+- PHP invoca automáticamente a `worker.php` en segundo plano (usando procesos asíncronos de sistema operativo).
+- La vista recibe un `job_id` para consultar el progreso mientras el `Auto-Worker` trabaja sin bloquear el navegador.
+
 3. **Motor de Validación:** Verifica que los datos cumplan con las reglas de negocio antes de la persistencia.
 4. **Motor de Reportes (Dashboard):** Genera estadísticas e indicadores a partir de los datos consolidados.
 

@@ -53,8 +53,14 @@ if (!move_uploaded_file($file['tmp_name'], $tmpFile)) {
 $queue = new JobQueue($db);
 $jobId = $queue->enqueue('excel_aprendices', realpath($tmpFile));
 
+// Despertar al worker en segundo plano (Específico para Windows)
+$workerPath = realpath(__DIR__ . '/worker.php');
+if ($workerPath) {
+    pclose(popen("start /B php \"$workerPath\"", "r"));
+}
+
 echo json_encode([
     'ok'      => true,
     'job_id'  => $jobId,
-    'message' => 'Archivo encolado exitosamente para procesamiento en segundo plano.'
+    'message' => 'Archivo encolado exitosamente para procesamiento automático.'
 ]);
