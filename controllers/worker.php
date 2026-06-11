@@ -188,11 +188,19 @@ function procesarExcelAprendices(array $job, \PDO $db, JobQueue $queue) {
 
     $totalRows = count($allRows);
 
+    $db->beginTransaction();
+    $batchCount = 0;
+
     foreach ($allRows as $index => $row) {
         $row_num++;
+        $batchCount++;
         
-        // Reportar progreso cada 100 filas
-        if ($index > 0 && $index % 100 === 0) {
+        // Reportar progreso y comitear en lotes de 500 para máximo rendimiento
+        if ($batchCount >= 500) {
+            $db->commit();
+            $db->beginTransaction();
+            $batchCount = 0;
+            
             $progreso = (int)(($index / $totalRows) * 100);
             $queue->updateProgress($job['id'], $progreso);
         }
@@ -274,7 +282,6 @@ function procesarExcelAprendices(array $job, \PDO $db, JobQueue $queue) {
             $msg = $e->getMessage();
             $errores[] = "Fila {$row_num} (aprendiz {$doc}): " . $msg;
             $queue->logError($job['id'], $row_num, "Error guardando aprendiz {$doc}: " . $msg);
-            continue;
         }
 
         if (!$colComp && !$colResultado) continue;
@@ -348,7 +355,7 @@ function procesarExcelAprendices(array $job, \PDO $db, JobQueue $queue) {
         if (empty($fechaJuicio)) $fechaJuicio = date('Y-m-d H:i:s');
 
         try {
-            $db->beginTransaction();
+            $db->exec("SAVEPOINT row_{$row_num}");
             $stmtJuicio->execute([':tipo' => $tipoJuicio, ':fecha' => $fechaJuicio, ':func' => (int)$funcDoc, ':ficha' => $ficha ?: null, ':aprendiz' => $doc ?: null]);
             $idJuicio = $db->lastInsertId();
 
@@ -356,15 +363,17 @@ function procesarExcelAprendices(array $job, \PDO $db, JobQueue $queue) {
             $idResultado = $db->lastInsertId();
 
             $stmtCompetencia->execute([':nombre' => $compNombre, ':codigo' => $compCodigo, ':aprendiz' => $doc, ':ficha' => $ficha ?: null, ':resultado' => $idResultado]);
-            $db->commit();
             $cntJuicios++;
         } catch (\PDOException $e) {
-            $db->rollBack();
+            $db->exec("ROLLBACK TO SAVEPOINT row_{$row_num}");
             $msg = $e->getMessage();
             $errores[] = "Fila {$row_num} (juicio {$doc}): " . $msg;
             $queue->logError($job['id'], $row_num, "Error guardando juicio para aprendiz {$doc}: " . $msg);
         }
     }
+    
+    // Commit del último lote
+    $db->commit();
 
     // Finalizar Trabajo
     $resultadoFinal = [
