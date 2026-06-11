@@ -72,4 +72,16 @@ class JobQueue {
         $stmt = $this->db->prepare("UPDATE trabajos_importacion SET estado = 'error', errores = :err WHERE id = :id");
         $stmt->execute([':err' => $errores, ':id' => $jobId]);
     }
+
+    /**
+     * Registra un error especfico en una fila del archivo importado.
+     */
+    public function logError(int $jobId, ?int $fila, string $mensajeError) {
+        $stmt = $this->db->prepare("INSERT INTO logs_importacion (job_id, fila, mensaje_error) VALUES (:job_id, :fila, :mensaje)");
+        $stmt->execute([
+            ':job_id'  => $jobId,
+            ':fila'    => $fila,
+            ':mensaje' => $mensajeError
+        ]);
+    }
 }

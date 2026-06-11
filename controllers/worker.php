@@ -215,7 +215,9 @@ function procesarExcelAprendices(array $job, \PDO $db, JobQueue $queue) {
                 $estado    = $lastEstado;
                 $ficha     = $lastFicha;
             } else {
-                $errores[] = "Fila {$row_num}: documento vacío o inválido"; 
+                $msg = "documento vaco o invǭlido";
+                $errores[] = "Fila {$row_num}: " . $msg;
+                $queue->logError($job['id'], $row_num, $msg);
                 continue; 
             }
         } else {
@@ -269,7 +271,9 @@ function procesarExcelAprendices(array $job, \PDO $db, JobQueue $queue) {
             ]);
             $cntAprendices++;
         } catch (\PDOException $e) {
-            $errores[] = "Fila {$row_num} (aprendiz {$doc}): " . $e->getMessage();
+            $msg = $e->getMessage();
+            $errores[] = "Fila {$row_num} (aprendiz {$doc}): " . $msg;
+            $queue->logError($job['id'], $row_num, "Error guardando aprendiz {$doc}: " . $msg);
             continue;
         }
 
@@ -356,7 +360,9 @@ function procesarExcelAprendices(array $job, \PDO $db, JobQueue $queue) {
             $cntJuicios++;
         } catch (\PDOException $e) {
             $db->rollBack();
-            $errores[] = "Fila {$row_num} (juicio {$doc}): " . $e->getMessage();
+            $msg = $e->getMessage();
+            $errores[] = "Fila {$row_num} (juicio {$doc}): " . $msg;
+            $queue->logError($job['id'], $row_num, "Error guardando juicio para aprendiz {$doc}: " . $msg);
         }
     }
 
