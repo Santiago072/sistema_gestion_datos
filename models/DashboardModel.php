@@ -16,7 +16,9 @@ class DashboardModel extends BaseModel {
                 (SELECT COUNT(DISTINCT j.id_juicio) FROM juicios j JOIN resultados r ON r.id_juicio=j.id_juicio JOIN competencias c ON c.id_resultado=r.id_resultado JOIN aprendices a ON a.documento=c.id_aprendiz WHERE j.tipo_juicio = 'Por evaluar' $whereA) AS total_juicios_por_evaluar,
                 (SELECT COUNT(DISTINCT j.id_juicio) FROM juicios j JOIN resultados r ON r.id_juicio=j.id_juicio JOIN competencias c ON c.id_resultado=r.id_resultado JOIN aprendices a ON a.documento=c.id_aprendiz WHERE j.tipo_juicio = 'No aprobado' $whereA) AS total_juicios_no_aprobados,
                 (SELECT COUNT(*) FROM programas $whereP) AS total_programas,
-                (SELECT COUNT(DISTINCT j.id_funcionario) FROM juicios j JOIN resultados r ON r.id_juicio=j.id_juicio JOIN competencias c ON c.id_resultado=r.id_resultado JOIN aprendices a ON a.documento=c.id_aprendiz WHERE 1=1 $whereA) AS total_funcionarios";
+                (SELECT COUNT(DISTINCT j.id_funcionario) FROM juicios j JOIN resultados r ON r.id_juicio=j.id_juicio JOIN competencias c ON c.id_resultado=r.id_resultado JOIN aprendices a ON a.documento=c.id_aprendiz WHERE 1=1 $whereA) AS total_funcionarios,
+                (SELECT COUNT(DISTINCT r.id_resultado) FROM resultados r JOIN competencias c ON c.id_resultado=r.id_resultado JOIN aprendices a ON a.documento=c.id_aprendiz WHERE 1=1 $whereA) AS total_resultados,
+                (SELECT COUNT(DISTINCT c.id_competencia) FROM competencias c JOIN aprendices a ON a.documento=c.id_aprendiz WHERE 1=1 $whereA) AS total_competencias";
             $stmt = $this->db->query($sql);
             return $stmt->fetch();
         } else {
@@ -29,7 +31,9 @@ class DashboardModel extends BaseModel {
                 (SELECT COUNT(*) FROM juicios WHERE tipo_juicio = 'Por evaluar') AS total_juicios_por_evaluar,
                 (SELECT COUNT(*) FROM juicios WHERE tipo_juicio = 'No aprobado') AS total_juicios_no_aprobados,
                 (SELECT COUNT(*) FROM programas) AS total_programas,
-                (SELECT COUNT(*) FROM funcionarios) AS total_funcionarios";
+                (SELECT COUNT(*) FROM funcionarios) AS total_funcionarios,
+                (SELECT COUNT(*) FROM resultados) AS total_resultados,
+                (SELECT COUNT(*) FROM competencias) AS total_competencias";
             return $this->db->query($sql)->fetch();
         }
     }
