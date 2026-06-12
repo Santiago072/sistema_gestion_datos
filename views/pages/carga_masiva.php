@@ -162,7 +162,6 @@ function previewCSV(text) {
 function subirArchivo() {
   if (!selectedFile) return;
 
-  // Progreso
   const pw   = document.getElementById('progressWrap');
   const pb   = document.getElementById('progBar');
   const ppct = document.getElementById('progPct');
@@ -170,10 +169,19 @@ function subirArchivo() {
   pw.style.display = 'block';
   document.getElementById('btnSubir').disabled = true;
 
+  // Barra animada mientras se sube y procesa
   let prog = 0;
   pb.style.width = '0%';
   ppct.textContent = '0%';
   plbl.textContent = 'Subiendo archivo...';
+  const iv = setInterval(() => {
+    prog = Math.min(prog + 1, 90);
+    pb.style.width = prog + '%';
+    ppct.textContent = prog + '%';
+    if (prog < 30) plbl.textContent = 'Leyendo archivo...';
+    else if (prog < 65) plbl.textContent = 'Procesando filas...';
+    else plbl.textContent = 'Guardando en base de datos...';
+  }, 200);
 
   const fd = new FormData();
   fd.append('archivo', selectedFile);
@@ -181,69 +189,45 @@ function subirArchivo() {
   fetch('/sistema_gestion_datos/controllers/upload_aprendices.php', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(d => {
+      clearInterval(iv);
+      pb.style.width = '100%';
+      ppct.textContent = '100%';
+      plbl.textContent = 'Completado';
+      document.getElementById('btnSubir').disabled = false;
+
       if (d.error) { showMsg('error', d.message); return; }
 
-      // Polling Job Status
-      const jobId = d.job_id;
-      let lastProgress = 0;
-      plbl.textContent = 'Procesando en segundo plano...';
-      
-      const iv = setInterval(() => {
-          fetch('/sistema_gestion_datos/controllers/job_status.php?id=' + jobId)
-          .then(r => r.json())
-          .then(status => {
-              if (status.error) return;
+      const erroresHtml = (d.errores || []).slice(0, 8).join('<br>');
+      const resHtml = `
+        <div class="alert alert-success">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <div><strong>¡Carga exitosa!</strong> Se procesaron <strong>${d.total_filas}</strong> filas.</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px">
+          <div style="background:rgba(57,169,0,0.1);border:1px solid rgba(57,169,0,0.25);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:800;color:#39A900">${d.programas}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Programas</div>
+          </div>
+          <div style="background:rgba(0,188,212,0.1);border:1px solid rgba(0,188,212,0.25);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:800;color:#00BCD4">${d.aprendices}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Aprendices</div>
+          </div>
+          <div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:800;color:#3B82F6">${d.funcionarios}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Funcionarios</div>
+          </div>
+          <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:800;color:#F59E0B">${d.juicios}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Juicios</div>
+          </div>
+        </div>
+        ${d.columnas_detectadas ? `<div style="margin-top:10px;font-size:.75rem;color:#7a8fa6">Columnas detectadas: <em>${d.columnas_detectadas.join(', ')}</em></div>` : ''}
+        ${d.errores && d.errores.length ? `<div class="alert alert-warning" style="margin-top:10px"><div><strong>${d.errores.length} advertencias:</strong><br>${erroresHtml}</div></div>` : ''}`;
 
-              let prog = status.progreso || 0;
-              pb.style.width = prog + '%';
-              ppct.textContent = prog + '%';
-
-              if (status.estado === 'completado') {
-                  clearInterval(iv);
-                  pb.style.width = '100%';
-                  ppct.textContent = '100%';
-                  plbl.textContent = 'Completado';
-                  document.getElementById('btnSubir').disabled = false;
-
-                  const res = status.resultado || {};
-                  const logErr = status.errores_log || [];
-                  const erroresHtml = logErr.map(e => `Fila ${e.fila}: ${e.mensaje_error}`).slice(0,8).join('<br>');
-
-                  const resHtml = `
-                    <div class="alert alert-success">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                      <div><strong>¡Carga exitosa!</strong> Se procesaron <strong>${res.total_filas || 0}</strong> filas.</div>
-                    </div>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px">
-                      <div style="background:rgba(57,169,0,0.1);border:1px solid rgba(57,169,0,0.25);border-radius:8px;padding:12px;text-align:center">
-                        <div style="font-size:1.6rem;font-weight:800;color:#39A900">${res.programas || 0}</div>
-                        <div style="font-size:.72rem;color:#7a8fa6">Programas</div>
-                      </div>
-                      <div style="background:rgba(0,188,212,0.1);border:1px solid rgba(0,188,212,0.25);border-radius:8px;padding:12px;text-align:center">
-                        <div style="font-size:1.6rem;font-weight:800;color:#00BCD4">${res.aprendices || 0}</div>
-                        <div style="font-size:.72rem;color:#7a8fa6">Aprendices</div>
-                      </div>
-                      <div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:12px;text-align:center">
-                        <div style="font-size:1.6rem;font-weight:800;color:#3B82F6">${res.funcionarios || 0}</div>
-                        <div style="font-size:.72rem;color:#7a8fa6">Funcionarios</div>
-                      </div>
-                      <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:12px;text-align:center">
-                        <div style="font-size:1.6rem;font-weight:800;color:#F59E0B">${res.juicios || 0}</div>
-                        <div style="font-size:.72rem;color:#7a8fa6">Juicios</div>
-                      </div>
-                    </div>
-                    ${logErr.length ? `<div class="alert alert-warning" style="margin-top:10px;max-height:200px;overflow-y:auto"><div><strong>${logErr.length} advertencias/errores:</strong><br>${erroresHtml} ${logErr.length > 8 ? '<br>...ver logs completos en BD' : ''}</div></div>` : ''}`;
-                  document.getElementById('resultados').innerHTML = resHtml;
-              } else if (status.estado === 'error') {
-                  clearInterval(iv);
-                  document.getElementById('btnSubir').disabled = false;
-                  showMsg('error', 'El proceso falló: ' + (status.errores || 'Error desconocido'));
-              }
-          }).catch(console.error);
-      }, 1500);
-
+      document.getElementById('resultados').innerHTML = resHtml;
     })
     .catch(e => {
+      clearInterval(iv);
       document.getElementById('btnSubir').disabled = false;
       showMsg('error', 'Error de conexión: ' + e.message);
     });
@@ -256,3 +240,5 @@ function showMsg(type, msg) {
 </script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
+
+
