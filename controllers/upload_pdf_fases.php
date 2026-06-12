@@ -49,65 +49,79 @@ if (!move_uploaded_file($file['tmp_name'], $tmpFile)) {
     exit;
 }
 
-// ── Ruta al script Python ──
-$scriptPath  = __DIR__ . '/scripts/extract_pdf.py';
-$escapedPdf    = escapeshellarg($tmpFile);
-$escapedScript = escapeshellarg($scriptPath);
+// ── Función para verificar si la API Flask está corriendo ──
+function checkFlaskApi() {
+    $ch = curl_init('http://127.0.0.1:5000/health');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return $httpCode === 200;
+}
 
-// Ruta absoluta al ejecutable de Python detectada en este sistema
-$pythonExe = 'C:\Users\Usuario\AppData\Local\Programs\Python\Python313\python.exe';
+// ── Función para iniciar la API Flask en segundo plano ──
+function startFlaskApi() {
+    $pythonExe = 'C:\Users\Usuario\AppData\Local\Programs\Python\Python313\python.exe';
+    if (!file_exists($pythonExe)) {
+        $pythonExe = 'python'; // Fallback to PATH
+    }
+    
+    $appPath = __DIR__ . '/scripts/app.py';
+    $cmd = 'start /B "" "' . $pythonExe . '" "' . $appPath . '" > NUL 2> NUL';
+    pclose(popen($cmd, 'r'));
+    
+    // Esperar hasta 5 segundos para que la API inicie
+    for ($i = 0; $i < 10; $i++) {
+        usleep(500000); // 0.5s
+        if (checkFlaskApi()) return true;
+    }
+    return false;
+}
 
-// -X utf8 fuerza UTF-8 en stdin/stdout/stderr sin necesitar variables de entorno
-// cmd /c permite ejecutar el comando completo con rutas que tienen espacios
-$command = 'cmd /c ""' . $pythonExe . '" -X utf8 ' . $escapedScript . ' ' . $escapedPdf . ' 2>&1"';
+// Asegurar que Flask esté corriendo
+if (!checkFlaskApi()) {
+    if (!startFlaskApi()) {
+        http_response_code(500);
+        echo json_encode(['error' => 'No se pudo iniciar el microservicio de extracción de PDF. Asegúrate de tener Python y Flask instalados.']);
+        @unlink($tmpFile);
+        exit;
+    }
+}
 
-$output = shell_exec($command);
+// ── Enviar el PDF a la micro-API Flask vía HTTP POST ──
+$cfile = new CURLFile($tmpFile, 'application/pdf', 'documento.pdf');
+$data = ['pdf' => $cfile];
 
-// Limpiar archivo temporal (comentado para depuración)
+$ch = curl_init('http://127.0.0.1:5000/extract-pdf');
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, 120); // 2 minutos máximo para extraer PDFs muy grandes
+
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$curlError = curl_error($ch);
+curl_close($ch);
+
+// Limpiar archivo temporal en PHP
 @unlink($tmpFile);
 
-if ($output === null || trim($output) === '') {
-    // shell_exec puede estar deshabilitado o Python no está en el PATH
+if ($response === false) {
     http_response_code(500);
-    echo json_encode([
-        'error' => 'No se pudo ejecutar Python. Verifica que Python esté instalado y en el PATH del sistema. ' .
-                   'Intenta ejecutar "python --version" en tu terminal CMD.',
-        'comando_ejecutado' => $command
-    ]);
+    echo json_encode(['error' => 'Error de conexión con el servicio Python: ' . $curlError]);
     exit;
 }
 
-// Detectar si hay un error de Python antes del JSON
-// (Python puede imprimir warnings/errors antes del output real)
-$jsonStart = strpos($output, '{');
-if ($jsonStart === false) {
-    http_response_code(500);
-    echo json_encode([
-        'error'  => 'Python no devolvió JSON válido. Detalles: ' . substr($output, 0, 1000)
-    ]);
+$data = json_decode($response, true);
+
+if ($httpCode !== 200 || !empty($data['error'])) {
+    http_response_code($httpCode !== 200 ? 500 : 422);
+    $msg = $data['error'] ?? 'Error desconocido en el servicio Python';
+    echo json_encode(['error' => $msg]);
     exit;
 }
 
-$jsonOutput = substr($output, $jsonStart);
-$data = json_decode($jsonOutput, true);
-
-if (json_last_error() !== JSON_ERROR_NONE || !$data) {
-    http_response_code(500);
-    echo json_encode([
-        'error'  => 'Error al decodificar la respuesta de Python: ' . json_last_error_msg(),
-        'output' => substr($output, 0, 500)
-    ]);
-    exit;
-}
-
-if (!empty($data['error'])) {
-    http_response_code(422);
-    echo json_encode(['error' => $data['error']]);
-    exit;
-}
-
-// ── Construir la respuesta en el formato que espera el frontend ──
-// El frontend espera: { ok, total_caracteres, total_paginas, datos_extraidos, datos_mapeados }
 $registros = $data['registros'] ?? [];
 
 // Mapear datos para el frontend (compatible con la función buildMappedData anterior)
