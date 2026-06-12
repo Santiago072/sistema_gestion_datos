@@ -1,10 +1,10 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../models/FasesModel.php';
+require_once __DIR__ . '/../models/DashboardFasesRepository.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-$model = new FasesModel(getDB());
+$model = new DashboardFasesRepository(getDB());
 
 $idFase = !empty($_GET['id_fase']) ? (int)$_GET['id_fase'] : null;
 $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
