@@ -1,114 +1,338 @@
+/* ===================================================================
+   fases.js — Módulo Gestión de Fases Formativas
+   Depende del HTML de fases_proyecto.php y del diseño en styles.css
+   =================================================================== */
 const API = '/sistema_gestion_datos/controllers/fases_crud.php';
-let currentFaseId = null;
 
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-function openModal(id){ document.getElementById(id).classList.add('open'); }
+let currentFaseId   = null;
+let allFases        = [];     // cache de fases para filtros
+let allActividades  = [];     // cache de actividades para filtros
 
+/* ── Modales ── */
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+
+/* ── Helpers ── */
 function getProgramaId() {
   return document.getElementById('globalPrograma')?.value || '';
 }
 
-// Cuando cambia el programa global, recargar todo
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function highlightText(text, query) {
+  if (!query) return escapeHtml(text);
+  const safe = escapeHtml(text);
+  const safeQ = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return safe.replace(new RegExp(`(${safeQ})`, 'gi'), '<mark class="highlight">$1</mark>');
+}
+
+/* ── Cambio de programa global ── */
 function onProgramaChange() {
   const idFicha = getProgramaId();
-  // Sincronizar con el selector de la tab PDF
+
+  // Sincronizar selector PDF
   const pdfSel = document.getElementById('pdfPrograma');
   if (pdfSel) pdfSel.value = idFicha;
+
   currentFaseId = null;
-  document.getElementById('tituloActividades').textContent = '📋 Actividades';
-  
-  // Ocultar botones de agregar nueva fase/actividad si estamos en "Todos los programas"
-  document.getElementById('btnNuevaFase').style.display = idFicha ? 'inline-block' : 'none';
+  document.getElementById('btnNuevaFase').style.display = idFicha ? 'inline-flex' : 'none';
   document.getElementById('btnNuevaActividad').style.display = 'none';
-  
-  document.getElementById('listaActividades').innerHTML = '<div class="empty-state"><p>Selecciona una fase para ver sus actividades</p></div>';
+  document.getElementById('filtroActividadesBar').style.display = 'none';
+  document.getElementById('countActividades').style.display = 'none';
+  document.getElementById('tituloActividades').innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+    </svg>
+    Actividades`;
+
+  document.getElementById('listaActividades').innerHTML = `
+    <div class="empty-panel">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59"/>
+      </svg>
+      <p>Selecciona una fase para<br>ver sus actividades</p>
+    </div>`;
+
+  // Reset búsqueda de fases
+  const searchFases = document.getElementById('searchFases');
+  if (searchFases) { searchFases.value = ''; document.getElementById('clearFases').classList.remove('visible'); }
+
   cargarFases();
 }
 
-// ── CARGAR FASES ──
+/* ── CARGAR FASES ── */
 function cargarFases() {
   const idFicha = getProgramaId();
-  const url = API + '?action=list_fases' + (idFicha ? '&id_ficha=' + idFicha : '');
-  fetch(url).then(r=>r.json()).then(fases=>{
-    document.getElementById('listaFases').innerHTML = fases.length
-      ? fases.map(f=>`
-        <div class="flex-center gap-8 mb-16" style="padding:12px;background:rgba(57,169,0,0.05);border:1px solid rgba(57,169,0,0.15);border-radius:8px;cursor:pointer" onclick="seleccionarFase(${f.id_fase},'${f.nombre_fase.replace(/'/g,"\\'")}')">
-          <div style="width:28px;height:28px;background:rgba(57,169,0,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#39A900;font-size:.8rem;flex-shrink:0">${f.orden}</div>
-          <div style="flex:1"><strong>${f.nombre_fase}</strong><br><small style="color:#7a8fa6">${f.descripcion||''}</small></div>
-          ${idFicha ? `
-          <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();editarFase(${f.id_fase},'${f.nombre_fase.replace(/'/g,"\\'")}',${f.orden},'${(f.descripcion||'').replace(/'/g,"\\'")}')">✏</button>
-          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();eliminarFase(${f.id_fase})">🗑</button>
-          ` : ''}
-        </div>`).join('')
-      : '<p class="text-muted">No hay fases configuradas</p>';
-  });
+  const url = `${API}?action=list_fases` + (idFicha ? `&id_ficha=${idFicha}` : '');
+  document.getElementById('listaFases').innerHTML = '<div class="loading"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div>';
+
+  fetch(url)
+    .then(r => r.json())
+    .then(fases => {
+      allFases = fases;
+      renderFases(fases, '');
+    })
+    .catch(() => {
+      document.getElementById('listaFases').innerHTML = '<div class="empty-state"><p>Error al cargar fases. Revisa la conexión.</p></div>';
+    });
 }
 
+function renderFases(fases, query) {
+  const idFicha = getProgramaId();
+  const counter = document.getElementById('countFases');
+  counter.textContent = fases.length;
+
+  if (!fases.length) {
+    document.getElementById('listaFases').innerHTML = `
+      <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z"/></svg>
+        <p>${query ? `Sin resultados para "<strong>${escapeHtml(query)}</strong>"` : 'No hay fases configuradas.<br>Carga un PDF o crea una fase manualmente.'}</p>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('listaFases').innerHTML = fases.map(f => {
+    const isActive = f.id_fase == currentFaseId;
+    return `
+    <div class="fase-item${isActive ? ' selected' : ''}" id="fase-row-${f.id_fase}" onclick="seleccionarFase(${f.id_fase},'${f.nombre_fase.replace(/'/g, "\\'")}')">
+      <div class="fase-order-badge">${f.orden}</div>
+      <div class="fase-info">
+        <strong title="${escapeHtml(f.nombre_fase)}">${highlightText(f.nombre_fase, query)}</strong>
+        ${f.descripcion ? `<small title="${escapeHtml(f.descripcion)}">${highlightText(f.descripcion, query)}</small>` : ''}
+      </div>
+      ${idFicha ? `
+      <div class="fase-actions">
+        <button class="btn btn-xs btn-ghost btn-icon" title="Editar"
+          onclick="event.stopPropagation();editarFase(${f.id_fase},'${escapeHtml(f.nombre_fase).replace(/'/g,"\\'")}',${f.orden},'${(f.descripcion||'').replace(/'/g,"\\'")}')" >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+        </button>
+        <button class="btn btn-xs btn-danger btn-icon" title="Eliminar"
+          onclick="event.stopPropagation();eliminarFase(${f.id_fase},'${escapeHtml(f.nombre_fase)}')" >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+        </button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/* Filtrar fases por texto */
+function filtrarFases(query) {
+  const btn = document.getElementById('clearFases');
+  btn.classList.toggle('visible', query.length > 0);
+  const q = query.toLowerCase().trim();
+  const filtradas = !q ? allFases : allFases.filter(f =>
+    f.nombre_fase.toLowerCase().includes(q) || (f.descripcion || '').toLowerCase().includes(q)
+  );
+  renderFases(filtradas, query);
+}
+
+function limpiarBusquedaFases() {
+  const input = document.getElementById('searchFases');
+  input.value = '';
+  document.getElementById('clearFases').classList.remove('visible');
+  renderFases(allFases, '');
+}
+
+/* ── SELECCIONAR FASE ── */
 function seleccionarFase(id, nombre) {
   currentFaseId = id;
   const idFicha = getProgramaId();
-  document.getElementById('tituloActividades').textContent = '📋 ' + nombre;
-  document.getElementById('btnNuevaActividad').style.display = idFicha ? 'flex' : 'none';
+
+  // Resaltar selección
+  document.querySelectorAll('.fase-item').forEach(el => el.classList.remove('selected'));
+  const row = document.getElementById(`fase-row-${id}`);
+  if (row) row.classList.add('selected');
+
+  document.getElementById('tituloActividades').innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+    </svg>
+    ${escapeHtml(nombre)}`;
+
+  document.getElementById('btnNuevaActividad').style.display = idFicha ? 'inline-flex' : 'none';
+  document.getElementById('filtroActividadesBar').style.display = 'block';
+  document.getElementById('countActividades').style.display = 'inline-flex';
+
+  // Reset búsqueda actividades
+  const sa = document.getElementById('searchActividades');
+  if (sa) { sa.value = ''; document.getElementById('clearActividades').classList.remove('visible'); }
+
   cargarActividades(id, nombre);
 }
 
+/* ── CARGAR ACTIVIDADES ── */
 function cargarActividades(id, nombre) {
   const idFicha = getProgramaId();
-  const url = `${API}?action=list_actividades&id_fase=${id}&nombre_fase=${encodeURIComponent(nombre || '')}` + (idFicha ? `&id_ficha=${idFicha}` : '');
-  fetch(url).then(r=>r.json()).then(acts=>{
-    document.getElementById('listaActividades').innerHTML = acts.length
-      ? acts.map(a=>`
-        <div style="padding:10px 12px;border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:8px">
-          <div style="flex:1"><strong style="font-size:.85rem">${a.nombre}</strong><br><small style="color:#7a8fa6">${a.descripcion||''}</small></div>
-          ${idFicha ? `<button class="btn btn-sm btn-danger" onclick="eliminarActividad(${a.id_actividad})">🗑</button>` : ''}
-        </div>`).join('')
-      : '<p class="text-muted" style="padding:12px">No hay actividades en esta fase</p>';
-  });
+  const url = `${API}?action=list_actividades&id_fase=${id}&nombre_fase=${encodeURIComponent(nombre||'')}` + (idFicha ? `&id_ficha=${idFicha}` : '');
+  document.getElementById('listaActividades').innerHTML = '<div class="loading"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div>';
+
+  fetch(url)
+    .then(r => r.json())
+    .then(acts => {
+      allActividades = acts;
+      renderActividades(acts, '');
+    });
 }
 
-function openModalFase(){ document.getElementById('faseId').value='';document.getElementById('faseNombre').value='';document.getElementById('faseOrden').value=1;document.getElementById('faseDesc').value='';document.getElementById('modalFaseTitulo').textContent='Nueva Fase';openModal('modalFase'); }
-function editarFase(id,nombre,orden,desc){ document.getElementById('faseId').value=id;document.getElementById('faseNombre').value=nombre;document.getElementById('faseOrden').value=orden;document.getElementById('faseDesc').value=desc;document.getElementById('modalFaseTitulo').textContent='Editar Fase';openModal('modalFase'); }
-function openModalActividad(){ document.getElementById('actNombre').value='';document.getElementById('actDesc').value='';openModal('modalActividad'); }
-
-function guardarFase(){
-  const id=document.getElementById('faseId').value;
+function renderActividades(acts, query) {
+  const counter = document.getElementById('countActividades');
+  counter.textContent = acts.length;
   const idFicha = getProgramaId();
-  const data={
-    nombre_fase: document.getElementById('faseNombre').value,
+
+  if (!acts.length) {
+    document.getElementById('listaActividades').innerHTML = `
+      <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12"/></svg>
+        <p>${query ? `Sin resultados para "<strong>${escapeHtml(query)}</strong>"` : 'No hay actividades registradas en esta fase.'}</p>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('listaActividades').innerHTML = acts.map(a => `
+    <div class="act-item">
+      <div class="act-info">
+        <strong>${highlightText(a.nombre, query)}</strong>
+        ${a.descripcion ? `<small>${highlightText(a.descripcion, query)}</small>` : ''}
+      </div>
+      ${idFicha ? `
+      <div class="act-del">
+        <button class="btn btn-xs btn-danger btn-icon" title="Eliminar actividad"
+          onclick="eliminarActividad(${a.id_actividad},'${escapeHtml(a.nombre).replace(/'/g,"\\'")}')" >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+        </button>
+      </div>` : ''}
+    </div>`).join('');
+}
+
+/* Filtrar actividades */
+function filtrarActividades(query) {
+  const btn = document.getElementById('clearActividades');
+  btn.classList.toggle('visible', query.length > 0);
+  const q = query.toLowerCase().trim();
+  const filtradas = !q ? allActividades : allActividades.filter(a =>
+    a.nombre.toLowerCase().includes(q) || (a.descripcion || '').toLowerCase().includes(q)
+  );
+  renderActividades(filtradas, query);
+}
+
+function limpiarBusquedaActividades() {
+  const input = document.getElementById('searchActividades');
+  input.value = '';
+  document.getElementById('clearActividades').classList.remove('visible');
+  renderActividades(allActividades, '');
+}
+
+/* ── CRUD FASES ── */
+function openModalFase() {
+  document.getElementById('faseId').value = '';
+  document.getElementById('faseNombre').value = '';
+  document.getElementById('faseOrden').value = (allFases.length + 1);
+  document.getElementById('faseDesc').value = '';
+  document.getElementById('modalFaseTitulo').textContent = 'Nueva Fase';
+  openModal('modalFase');
+}
+
+function editarFase(id, nombre, orden, desc) {
+  document.getElementById('faseId').value = id;
+  document.getElementById('faseNombre').value = nombre;
+  document.getElementById('faseOrden').value = orden;
+  document.getElementById('faseDesc').value = desc;
+  document.getElementById('modalFaseTitulo').textContent = 'Editar Fase';
+  openModal('modalFase');
+}
+
+function guardarFase() {
+  const nombre = document.getElementById('faseNombre').value.trim();
+  if (!nombre) { document.getElementById('faseNombre').focus(); return; }
+
+  const id = document.getElementById('faseId').value;
+  const idFicha = getProgramaId();
+  const payload = {
+    nombre_fase: nombre,
     orden:       +document.getElementById('faseOrden').value,
-    descripcion: document.getElementById('faseDesc').value,
-    id_ficha:    idFicha ? +idFicha : null
+    descripcion: document.getElementById('faseDesc').value.trim(),
+    id_ficha:    idFicha ? +idFicha : null,
   };
-  const action = id?'update_fase':'create_fase';
-  if(id) data.id_fase=+id;
-  fetch(`${API}?action=${action}`,{method:'POST',body:JSON.stringify(data)}).then(r=>r.json()).then(()=>{closeModal('modalFase');cargarFases();});
+  if (id) payload.id_fase = +id;
+
+  const btnGuardar = document.querySelector('#modalFase .btn-primary');
+  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = 'Guardando…'; }
+
+  fetch(`${API}?action=${id ? 'update_fase' : 'create_fase'}`, {
+    method: 'POST', body: JSON.stringify(payload)
+  })
+    .then(r => r.json())
+    .then(() => { closeModal('modalFase'); cargarFases(); })
+    .finally(() => { if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Guardar'; } });
 }
 
-function eliminarFase(id){ if(!confirm('¿Eliminar esta fase y todas sus actividades?'))return;
-  fetch(`${API}?action=delete_fase`,{method:'POST',body:JSON.stringify({id_fase:id})}).then(()=>cargarFases()); }
+function eliminarFase(id, nombre) {
+  if (!confirm(`¿Eliminar la fase "${nombre}" y todas sus actividades?\nEsta acción no se puede deshacer.`)) return;
+  fetch(`${API}?action=delete_fase`, { method: 'POST', body: JSON.stringify({ id_fase: id }) })
+    .then(() => {
+      if (currentFaseId == id) {
+        currentFaseId = null;
+        document.getElementById('listaActividades').innerHTML = '<div class="empty-panel"><p>Selecciona una fase para ver sus actividades</p></div>';
+        document.getElementById('btnNuevaActividad').style.display = 'none';
+        document.getElementById('filtroActividadesBar').style.display = 'none';
+        document.getElementById('countActividades').style.display = 'none';
+      }
+      cargarFases();
+    });
+}
 
-function guardarActividad(){
+/* ── CRUD ACTIVIDADES ── */
+function openModalActividad() {
+  document.getElementById('actNombre').value = '';
+  document.getElementById('actDesc').value = '';
+  openModal('modalActividad');
+}
+
+function guardarActividad() {
+  const nombre = document.getElementById('actNombre').value.trim();
+  if (!nombre) { document.getElementById('actNombre').focus(); return; }
+
   const idFicha = getProgramaId();
-  const data={
-    nombre:      document.getElementById('actNombre').value,
-    descripcion: document.getElementById('actDesc').value,
+  const payload = {
+    nombre,
+    descripcion: document.getElementById('actDesc').value.trim(),
     id_fase:     currentFaseId,
-    id_ficha:    idFicha ? +idFicha : null
+    id_ficha:    idFicha ? +idFicha : null,
   };
-  fetch(`${API}?action=create_actividad`,{method:'POST',body:JSON.stringify(data)}).then(r=>r.json()).then(()=>{closeModal('modalActividad');cargarActividades(currentFaseId);});
+
+  const btnGuardar = document.querySelector('#modalActividad .btn-primary');
+  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = 'Guardando…'; }
+
+  fetch(`${API}?action=create_actividad`, { method: 'POST', body: JSON.stringify(payload) })
+    .then(r => r.json())
+    .then(() => { closeModal('modalActividad'); cargarActividades(currentFaseId); })
+    .finally(() => { if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Guardar'; } });
 }
 
-function eliminarActividad(id){ if(!confirm('¿Eliminar esta actividad?'))return;
-  fetch(`${API}?action=delete_actividad`,{method:'POST',body:JSON.stringify({id_actividad:id})}).then(()=>cargarActividades(currentFaseId)); }
+function eliminarActividad(id, nombre) {
+  if (!confirm(`¿Eliminar la actividad "${nombre}"?`)) return;
+  fetch(`${API}?action=delete_actividad`, { method: 'POST', body: JSON.stringify({ id_actividad: id }) })
+    .then(() => cargarActividades(currentFaseId));
+}
 
-cargarFases();
-onProgramaChange(); // Inicializar estado de botones
-
-// Sincronizar pdfPrograma con globalPrograma al iniciar
+/* ── Sincronizar selectores ── */
 document.addEventListener('DOMContentLoaded', () => {
-  const pdfSel = document.getElementById('pdfPrograma');
+  const pdfSel    = document.getElementById('pdfPrograma');
   const globalSel = document.getElementById('globalPrograma');
   if (pdfSel && globalSel) {
     pdfSel.addEventListener('change', () => { globalSel.value = pdfSel.value; });
   }
 });
+
+/* ── Atajos de teclado en modales ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+/* ── Init ── */
+cargarFases();
+onProgramaChange();
