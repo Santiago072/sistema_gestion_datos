@@ -14,7 +14,7 @@ $title = $page_titles[$current_page] ?? 'Sistema SENA';
 function navItem(string $href, string $label, string $icon, string $current): string {
     $base   = basename($href);
     $active = ($base === $current) ? 'active' : '';
-    return "<a href=\"{$href}\" class=\"nav-item {$active}\">{$icon}<span>{$label}</span></a>";
+    return "<a href=\"{$href}\" class=\"nav-item {$active}\" title=\"{$label}\">{$icon}<span>{$label}</span></a>";
 }
 
 $icons = [
@@ -94,57 +94,58 @@ $icons = [
     </div>
 
 <script>
-// Mobile Sidebar Toggle
-const sidebar = document.getElementById('sidebar');
-const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+// ── Sidebar toggle (mobile only < 781px) ──────────────────────────────────
+const sidebar        = document.getElementById('sidebar');
+const mobileMenuBtn  = document.getElementById('mobileMenuBtn');
 const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-if(mobileMenuBtn && sidebarOverlay){
-  mobileMenuBtn.addEventListener('click', () => {
-    sidebar.classList.add('open');
-    sidebarOverlay.classList.add('open');
-  });
-  sidebarOverlay.addEventListener('click', () => {
-    sidebar.classList.remove('open');
-    sidebarOverlay.classList.remove('open');
-  });
+function openSidebar() {
+  sidebar.classList.add('open');
+  sidebarOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  sidebarOverlay.classList.remove('open');
+  document.body.style.overflow = '';
 }
 
-// Theme Toggle Logic
-const themeBtn = document.getElementById('themeToggleBtn');
-const iconSun = document.getElementById('themeIconSun');
-const iconMoon = document.getElementById('themeIconMoon');
-const htmlEl = document.documentElement;
+if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openSidebar);
+if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+
+// Close on ESC
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+
+// Ensure sidebar resets when window resizes above 780px
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 780) closeSidebar();
+});
+
+// ── Theme Toggle ──────────────────────────────────────────────────────────
+const themeBtn  = document.getElementById('themeToggleBtn');
+const iconSun   = document.getElementById('themeIconSun');
+const iconMoon  = document.getElementById('themeIconMoon');
+const htmlEl    = document.documentElement;
 
 function updateThemeIcons() {
-  if (htmlEl.getAttribute('data-theme') === 'light') {
-    iconSun.style.display = 'none';
-    iconMoon.style.display = 'block';
-  } else {
-    iconSun.style.display = 'block';
-    iconMoon.style.display = 'none';
-  }
+  const isLight = htmlEl.getAttribute('data-theme') === 'light';
+  iconSun.style.display  = isLight ? 'none'  : 'block';
+  iconMoon.style.display = isLight ? 'block' : 'none';
 }
 
-if(themeBtn) {
+if (themeBtn) {
   updateThemeIcons();
   themeBtn.addEventListener('click', () => {
-    const currentTheme = htmlEl.getAttribute('data-theme');
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    const newTheme = htmlEl.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
     htmlEl.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     updateThemeIcons();
-    
-    // Update charts globally if Chart.js is present
+
     if (typeof Chart !== 'undefined') {
       const isLight = newTheme === 'light';
       Chart.defaults.color = isLight ? '#475569' : '#94a3b8';
       Chart.defaults.scale.grid.color = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
-      
-      // Update all instances
-      Object.values(Chart.instances).forEach(chart => {
-        chart.update();
-      });
+      Object.values(Chart.instances).forEach(c => c.update());
     }
   });
 }
