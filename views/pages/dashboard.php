@@ -87,13 +87,13 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
     <div class="form-group" style="margin:0"><label style="font-weight:600;margin-bottom:6px;display:block">Estado</label>
       <div class="modern-search-wrapper">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-        <select id="fEstado" onchange="aplicarFiltro()"><option value="">Todos los estados</option><option>En formación</option><option>Retirado</option><option>Trasladado</option><option>Egresado</option></select>
+        <select id="fEstado" onchange="aplicarFiltro()"><option value="">Todos los estados</option><option>En formación</option><option>Retirado</option><option>Trasladado</option></select>
       </div>
     </div>
     <div class="form-group" style="margin:0"><label style="font-weight:600;margin-bottom:6px;display:block">Tipo de Juicio</label>
       <div class="modern-search-wrapper">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-        <select id="fTipo" onchange="aplicarFiltro()"><option value="">Todos los juicios</option><option>Aprobado</option><option>Por evaluar</option><option>No aprobado</option></select>
+        <select id="fTipo" onchange="aplicarFiltro()"><option value="">Todos los juicios</option><option>Aprobado</option><option>Por evaluar</option></select>
       </div>
     </div>
     <div class="form-group" style="margin:0;display:flex;flex-direction:column;justify-content:flex-end">

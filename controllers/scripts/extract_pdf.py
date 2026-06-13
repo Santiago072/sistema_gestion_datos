@@ -130,23 +130,29 @@ def parse_resultado(text: str) -> tuple[str, str]:
     Separa el código del nombre del resultado de aprendizaje.
     El código es SOLO el número antes del primer guión (ej: 593343).
     El número de resultado (01, 02…) NO forma parte del código.
-    Formatos del SENA:
-      - "593343 - 01 NOMBRE"   → código: "593343", nombre: "NOMBRE"
-      - "593243 - 01- Nombre"  → código: "593243", nombre: "Nombre"
     Retorna (codigo, nombre)
     """
     text = clean(text)
     if not text:
         return ("", "")
+    
+    codigo = ""
+    nombre = text
+
     # Captura SOLO los dígitos antes del primer guión como código
     m = re.match(r"^(\d{5,7})\s*[-–]\s*\d{2}[-]?\s+(.+)$", text, re.DOTALL)
     if m:
-        return (m.group(1).strip(), m.group(2).strip())
-    # Fallback para formatos sin número de resultado (ej: "590803 - NOMBRE")
-    m2 = re.match(r"^(\d{5,9})\s*[-–]\s*(.+)$", text, re.DOTALL)
-    if m2:
-        return (m2.group(1).strip(), m2.group(2).strip())
-    return ("", text)
+        codigo, nombre = m.group(1).strip(), m.group(2).strip()
+    else:
+        # Fallback para formatos sin número de resultado (ej: "590803 - NOMBRE")
+        m2 = re.match(r"^(\d{5,9})\s*[-–]\s*(.+)$", text, re.DOTALL)
+        if m2:
+            codigo, nombre = m2.group(1).strip(), m2.group(2).strip()
+
+    # Quitar guiones iniciales del nombre (ej: "- 02 SOLUCIONAR...")
+    nombre = re.sub(r"^[-–]\s*", "", nombre).strip()
+    
+    return (codigo, nombre)
 
 
 def parse_competencia(text: str) -> tuple[str, str]:
