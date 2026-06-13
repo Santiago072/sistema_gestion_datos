@@ -59,7 +59,182 @@ function onProgramaChange() {
   const searchFases = document.getElementById('searchFases');
   if (searchFases) { searchFases.value = ''; document.getElementById('clearFases').classList.remove('visible'); }
 
+  if (searchFases) { searchFases.value = ''; document.getElementById('clearFases').classList.remove('visible'); }
+
   cargarFases();
+  
+  // Also sync the "Proyectos" tab if we're changing global program
+  if(idFicha) {
+    seleccionarProyecto(idFicha);
+  }
+}
+
+/* ── CARGAR PROYECTOS (NUEVO TAB) ── */
+let proyectosData = [];
+
+function cargarProyectos(){
+  fetch(`${API}?action=list_proyectos`).then(r=>r.json()).then(d=>{
+    proyectosData = d;
+    cargarFases();
+  }).catch(() => {
+    // Si la URL dice ?tab=pdf y estamos cargando la página...
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasPdfParam = urlParams.get('tab') === 'pdf';
+    
+    if (hasPdfParam && document.getElementById('tabBtnPDF')) {
+      document.getElementById('tabBtnPDF').click();
+    } else if (document.getElementById('tabBtnProyectos')) {
+      document.getElementById('tabBtnProyectos').click();
+    }
+  });
+
+  // Cargar proyectos al inicio
+  document.addEventListener('DOMContentLoaded', cargarProyectos);
+}
+
+function seleccionarProyecto(id_ficha){
+  if(!id_ficha || !document.getElementById('proyectoContenedor')) return;
+  
+  // Si proyectosData aún no carga, intentarlo luego
+  if(proyectosData.length === 0) {
+    setTimeout(() => seleccionarProyecto(id_ficha), 500);
+    return;
+  }
+  
+  const p = proyectosData.find(x => x.id_ficha == id_ficha);
+  
+  if(!p) {
+    document.getElementById('proyectoContenedor').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'block';
+    return;
+  }
+  
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('proyectoContenedor').style.display = 'block';
+  document.getElementById('pNombre').textContent = p.nombre_proyecto || 'Proyecto Formativo';
+  document.getElementById('pSub').textContent = `${p.nombre} (Código: ${p.codigo_programa_sofia||'—'})`;
+  document.getElementById('pCentro').textContent = p.centro_formacion || '—';
+  document.getElementById('pRegional').textContent = p.regional || '—';
+  document.getElementById('pTiempo').textContent = p.tiempo_estimado_meses ? p.tiempo_estimado_meses + ' meses' : '—';
+  
+  document.getElementById('btnEliminarProyecto').onclick = () => eliminarProyecto(id_ficha);
+  
+  document.getElementById('fasesContenedor').innerHTML = '<div class="text-center text-muted" style="padding: 20px;">Cargando resumen de fases...</div>';
+  
+  fetch(`${API}?action=get_proyecto_detalle&id_ficha=${id_ficha}`).then(r=>r.json()).then(fases => {
+    let html = '';
+    
+    if(fases.length === 0) {
+      document.getElementById('fasesContenedor').innerHTML = '<div class="empty-state">No hay fases registradas en este proyecto.</div>';
+      return;
+    }
+    let globalActividades = 0;
+    let globalResultados = 0;
+    let globalCompetenciasSet = new Set();
+    
+    fases.forEach(fase => {
+      globalActividades += fase.actividades.length;
+      fase.actividades.forEach(act => {
+        act.relaciones.forEach(r => {
+          globalResultados++;
+          let keyGlobal = r.codigo_competencia || (r.nombre_competencia ? r.nombre_competencia.trim().toUpperCase() : null);
+          if(keyGlobal) globalCompetenciasSet.add(keyGlobal);
+        });
+      });
+    });
+    
+    document.getElementById('pTotalesGlobales').innerHTML = `
+      <div style="margin-top:12px;display:flex;gap:16px;font-size:0.85rem;background:var(--bg2);padding:8px 12px;border-radius:6px;width:fit-content">
+        <div><strong style="color:var(--text)">${globalActividades}</strong> <span style="color:var(--text-dim)">Actividades Totales</span></div>
+        <div><strong style="color:var(--text)">${globalCompetenciasSet.size}</strong> <span style="color:var(--text-dim)">Competencias Únicas</span></div>
+        <div><strong style="color:var(--text)">${globalResultados}</strong> <span style="color:var(--text-dim)">Resultados Totales</span></div>
+      </div>
+    `;
+
+    html += '<div class="grid-2">';
+    
+    fases.forEach((fase, i) => {
+      let actividadesCount = fase.actividades.length;
+      let resultadosCount = 0;
+      let compUnicasFase = new Set();
+      let actividadesHtml = '';
+      
+      if(actividadesCount === 0) {
+        actividadesHtml = '<div class="text-muted" style="font-size:0.85rem;padding:10px 0">No hay actividades.</div>';
+      } else {
+        fase.actividades.forEach(act => {
+          act.relaciones.forEach(r => {
+             resultadosCount++;
+             let keyFase = r.codigo_competencia || (r.nombre_competencia ? r.nombre_competencia.trim().toUpperCase() : null);
+             if(keyFase) compUnicasFase.add(keyFase);
+          });
+          
+          actividadesHtml += `
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--card-border)">
+              <div style="color:var(--text);font-size:0.9rem;font-weight:600;margin-bottom:6px">📋 ${act.nombre}</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                ${act.relaciones.map(r => `
+                  <div style="background:var(--card);padding:8px 12px;border-radius:6px;border-left:3px solid var(--primary);font-size:0.8rem">
+                    <div style="color:var(--text-muted);margin-bottom:2px"><strong>Competencia:</strong> ${r.nombre_competencia||'—'}</div>
+                    <div style="color:var(--text)"><strong>Resultado:</strong> ${r.nombre_resultado||'—'}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        });
+      }
+      
+      const competenciasCount = compUnicasFase.size;
+      
+      html += `
+        <div class="card fade-in" style="animation-delay:${i*0.1}s">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;border-bottom:1px solid var(--card-border);padding-bottom:12px">
+            <div style="width:36px;height:36px;background:var(--primary-glow);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--primary);font-size:1.1rem">${fase.orden}</div>
+            <div style="flex:1">
+              <div style="font-weight:600;color:var(--text);font-size:1.05rem">${fase.nombre_fase}</div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:8px;margin-bottom:16px">
+            <div style="flex:1;background:var(--bg);border:1px solid var(--card-border);padding:8px;border-radius:6px;text-align:center">
+              <div style="font-size:1.2rem;font-weight:700;color:var(--text);opacity:0.9">${actividadesCount}</div>
+              <div style="font-size:0.75rem;color:var(--text-dim)">Actividades</div>
+            </div>
+            <div style="flex:1;background:var(--bg);border:1px solid var(--card-border);padding:8px;border-radius:6px;text-align:center">
+              <div style="font-size:1.2rem;font-weight:700;color:var(--text);opacity:0.9">${competenciasCount}</div>
+              <div style="font-size:0.75rem;color:var(--text-dim)">Competencias</div>
+            </div>
+            <div style="flex:1;background:var(--bg);border:1px solid var(--card-border);padding:8px;border-radius:6px;text-align:center">
+              <div style="font-size:1.2rem;font-weight:700;color:var(--text);opacity:0.9">${resultadosCount}</div>
+              <div style="font-size:0.75rem;color:var(--text-dim)">Resultados</div>
+            </div>
+          </div>
+          
+          <div style="background:var(--bg);border:1px solid var(--card-border);border-radius:8px;padding:12px">
+            <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);font-weight:600">Desglose de Actividades</div>
+            ${actividadesHtml}
+          </div>
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    document.getElementById('fasesContenedor').innerHTML = html;
+  });
+}
+
+function eliminarProyecto(id_ficha){
+  if(!confirm('¿Estás seguro de eliminar TODOS los datos del proyecto formativo de la ficha '+id_ficha+'?\n\n- Se eliminarán las fases, actividades y resultados importados.\n- NO se eliminarán los aprendices ni los juicios evaluativos.\n- Podrás volver a subir el PDF luego.')) return;
+  
+  fetch(`${API}?action=delete_proyecto`,{method:'POST',body:JSON.stringify({id_ficha})}).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      cargarProyectos();
+      cargarFases(); // Recargar el tab de CRUD
+    } else {
+      alert('Error: '+d.error);
+    }
+  }).catch(e => alert('Error de conexión: '+e));
 }
 
 /* ── CARGAR FASES ── */

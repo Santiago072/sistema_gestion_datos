@@ -20,7 +20,11 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
 
 <!-- ── TABS ── -->
 <div class="tabs fade-in stagger-1">
-  <button class="tab-btn active" data-tab="tabFases" id="tabBtnFases">
+  <button class="tab-btn active" data-tab="tabProyectos" id="tabBtnProyectos">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:15px;height:15px"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776" /></svg>
+    Proyectos
+  </button>
+  <button class="tab-btn" data-tab="tabFases" id="tabBtnFases">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:15px;height:15px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z"/></svg>
     Fases y Actividades
   </button>
@@ -31,9 +35,43 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
 </div>
 
 <!-- ══════════════════════════════════════════════════════
+     TAB 0 — PROYECTOS (NUEVO)
+     ══════════════════════════════════════════════════════ -->
+<div class="tab-pane active" id="tabProyectos">
+  <div id="proyectoContenedor" style="display:none">
+    <!-- Info cabecera -->
+    <div class="card mb-24" style="background: linear-gradient(135deg, rgba(57,169,0,0.1), rgba(0,0,0,0)); border-left: 4px solid #39A900">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <h2 id="pNombre" style="margin-bottom:4px;color:var(--text-light)"></h2>
+          <div style="color:var(--text-muted);font-size:0.9rem" id="pSub"></div>
+          <div style="margin-top:12px;display:flex;gap:16px;font-size:0.85rem">
+            <div><strong style="color:var(--text-dim)">Centro:</strong> <span id="pCentro"></span></div>
+            <div><strong style="color:var(--text-dim)">Regional:</strong> <span id="pRegional"></span></div>
+            <div><strong style="color:var(--text-dim)">Duración:</strong> <span id="pTiempo"></span></div>
+          </div>
+          <div id="pTotalesGlobales"></div>
+        </div>
+        <button class="btn btn-danger btn-sm" id="btnEliminarProyecto">🗑 Eliminar Proyecto</button>
+      </div>
+    </div>
+
+    <!-- Fases Cards -->
+    <div class="section-title mb-16">Resumen de Fases y Actividades</div>
+    <div id="fasesContenedor"></div>
+  </div>
+
+  <div id="emptyState" class="empty-state card fade-in" style="display:none">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:40px;height:40px;color:#4a5f78;margin:0 auto 12px"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>
+    <p>Este programa no tiene un proyecto formativo cargado.</p>
+    <button class="btn btn-primary mt-16" onclick="document.getElementById('tabBtnPDF').click()">Cargar desde PDF</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
      TAB 1 — FASES Y ACTIVIDADES
      ══════════════════════════════════════════════════════ -->
-<div class="tab-pane active" id="tabFases">
+<div class="tab-pane" id="tabFases">
   <div class="grid-1-2" style="align-items: start;">
 
     <!-- ── Columna izquierda: lista de fases ── -->

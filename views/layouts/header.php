@@ -5,8 +5,7 @@ $page_titles  = [
     'consulta_aprendiz.php' => 'Consulta por Aprendiz',
     'carga_masiva.php'    => 'Carga Masiva Juicios',
     'eliminacion_masiva.php'=> 'Eliminar Programas',
-    'fases_proyecto.php'  => 'Fases del Proyecto Formativo',
-    'proyectos_formativos.php' => 'Proyectos Formativos por Ficha',
+    'fases_proyecto.php'  => 'Proyectos y Fases',
     'dashboard_fases.php' => 'Dashboard de Fases',
 ];
 $title = $page_titles[$current_page] ?? 'Sistema SENA';
@@ -72,8 +71,7 @@ $icons = [
       <?= navItem('/sistema_gestion_datos/views/pages/carga_masiva.php',      'Carga Masiva Juicios',   $icons['carga'],     $current_page) ?>
       <?= navItem('/sistema_gestion_datos/views/pages/eliminacion_masiva.php','Eliminar Programas',     $icons['eliminar'],  $current_page) ?>
       <div class="nav-label">Fases Formativas</div>
-      <?= navItem('/sistema_gestion_datos/views/pages/proyectos_formativos.php','Proyectos Formativos', $icons['dfases'],    $current_page) ?>
-      <?= navItem('/sistema_gestion_datos/views/pages/fases_proyecto.php',    'Gestión de Fases',       $icons['fases'],     $current_page) ?>
+      <?= navItem('/sistema_gestion_datos/views/pages/fases_proyecto.php',    'Proyectos y Fases',      $icons['fases'],     $current_page) ?>
       <?= navItem('/sistema_gestion_datos/views/pages/dashboard_fases.php',   'Dashboard de Fases',     $icons['dashboard'], $current_page) ?>
     </nav>
     <div class="sidebar-footer">
