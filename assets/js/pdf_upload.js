@@ -185,6 +185,13 @@ function importarDatos() {
         detHtml += '</div>';
         document.getElementById('pdfMsg').innerHTML += detHtml;
         cargarFases();
+        if (typeof cargarProyectos === 'function') cargarProyectos();
+        
+        // Saltar a la pestaña de proyectos automáticamente
+        setTimeout(() => {
+          const tabProyectos = document.getElementById('tabBtnProyectos');
+          if (tabProyectos) tabProyectos.click();
+        }, 1500);
       } else {
         showPdfMsg('error', d.error || 'Error durante la importación');
       }
