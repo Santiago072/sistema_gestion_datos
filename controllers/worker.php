@@ -301,11 +301,12 @@ function procesarExcelAprendices(array $job, \PDO $db, JobQueue $queue) {
         $resNombre = $resRaw ?: 'Sin resultado';
         if (str_contains($resRaw, ' ')) {
             $parts = explode(' ', $resRaw, 2);
-            if (preg_match('/[0-9]+/', $parts[0])) {
+            if (preg_match('/^[0-9]+$/', $parts[0])) {
                 $resCodigo = trim($parts[0]);
                 $resNombre = trim($parts[1]);
             }
         }
+        $resNombre = ltrim($resNombre, "- \t\n\r\0\x0B");
 
         $funcDoc = $colFuncDoc ? preg_replace('/\D/', '', $row[$colFuncDoc] ?? '') : '';
         $funcNom = $colFuncNom ? trim($row[$colFuncNom] ?? '') : 'Instructor';

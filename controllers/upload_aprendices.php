@@ -276,8 +276,9 @@ try {
         $resCodigo = ''; $resNombre = $resRaw ?: 'Sin resultado';
         if (str_contains($resRaw, ' ')) {
             [$p0, $p1] = array_pad(explode(' ', $resRaw, 2), 2, '');
-            if (preg_match('/[0-9]+/', $p0)) { $resCodigo = trim($p0); $resNombre = trim($p1); }
+            if (preg_match('/^[0-9]+$/', $p0)) { $resCodigo = trim($p0); $resNombre = trim($p1); }
         }
+        $resNombre = ltrim($resNombre, "- \t\n\r\0\x0B");
 
         $funcDoc = $colFuncDoc ? preg_replace('/\D/', '', $row[$colFuncDoc] ?? '') : '';
         $funcNom = $colFuncNom ? trim($row[$colFuncNom] ?? '') : 'Sin asignar';
