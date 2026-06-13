@@ -35,6 +35,10 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
         Procesar y Guardar
       </button>
+      <button class="btn btn-secondary" id="btnLimpiarUpload" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)" onclick="limpiarSubida()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+        Limpiar y Subir Otro
+      </button>
       <a href="data:text/csv;charset=utf-8,documento;tipo_documento;nombres;apellidos;estado;ficha;programa;competencia;resultado_aprendizaje;tipo_juicio;fecha_juicio;documento_funcionario;nombre_funcionario%0A1020304050;C%C3%A9dula de ciudadan%C3%ADa;Juan David;Mart%C3%ADnez Torres;En formaci%C3%B3n;1;Tecnolog%C3%ADa en ADSO;Construir soluciones de software;Implementar BD relacionales;Aprobado;2025-04-01 09:00:00;1;Carlos G%C3%B3mez" download="plantilla_sena.csv" class="btn btn-secondary btn-sm">⬇ Plantilla CSV</a>
     </div>
 
@@ -116,17 +120,31 @@ function formatBytes(b) {
   return (b/1048576).toFixed(1) + ' MB';
 }
 
+function limpiarSubida() {
+  selectedFile = null;
+  fileInput.value = '';
+  document.getElementById('fileName').textContent = '—';
+  document.getElementById('fileSize').textContent = '—';
+  document.getElementById('fileInfo').style.display = 'none';
+  document.getElementById('btnSubir').style.display = 'none';
+  document.getElementById('btnLimpiarUpload').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('resultados').innerHTML = '';
+  document.getElementById('previewCard').style.display = 'none';
+  document.getElementById('previewWrap').innerHTML = '';
+}
+
 function handleFile(file) {
   if (!file) return;
   const ext = file.name.split('.').pop().toLowerCase();
   if (!['xlsx','xls','csv'].includes(ext)) { showMsg('error','Solo se permiten archivos .xlsx, .xls o .csv'); return; }
 
+  limpiarSubida(); // Limpiar UI previo
   selectedFile = file;
   document.getElementById('fileName').textContent = file.name;
   document.getElementById('fileSize').textContent = formatBytes(file.size) + ' · ' + ext.toUpperCase();
   document.getElementById('fileInfo').style.display = 'block';
   document.getElementById('btnSubir').style.display = 'flex';
-  document.getElementById('resultados').innerHTML = '';
 
   // Previsualización solo para CSV (xlsx no se puede leer en el cliente sin lib)
   if (ext === 'csv') {
@@ -168,6 +186,7 @@ function subirArchivo() {
   const plbl = document.getElementById('progLabel');
   pw.style.display = 'block';
   document.getElementById('btnSubir').disabled = true;
+  document.getElementById('btnLimpiarUpload').style.display = 'none';
 
   // Barra animada mientras se sube y procesa
   let prog = 0;
@@ -193,7 +212,8 @@ function subirArchivo() {
       pb.style.width = '100%';
       ppct.textContent = '100%';
       plbl.textContent = 'Completado';
-      document.getElementById('btnSubir').disabled = false;
+      document.getElementById('btnSubir').style.display = 'none';
+      document.getElementById('btnLimpiarUpload').style.display = 'flex';
 
       if (d.error) { showMsg('error', d.message); return; }
 
