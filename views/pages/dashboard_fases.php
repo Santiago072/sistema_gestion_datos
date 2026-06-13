@@ -6,10 +6,10 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
 ?>
 
 <!-- Controles de Filtro Global -->
-<div class="card mb-24" style="background:var(--card-bg);border:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between">
+<div class="card mb-24" style="display:flex;align-items:center;justify-content:space-between">
   <div style="display:flex;align-items:center;gap:12px;width:100%">
     <label style="font-weight:600;white-space:nowrap;color:var(--text-muted)">Filtrar por Programa:</label>
-    <select id="filtroProgramaGlobal" onchange="actualizarDashboardFases()" style="flex:1;max-width:500px;padding:10px 14px;border-radius:var(--radius-sm);background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);color:#fff">
+    <select id="filtroProgramaGlobal" onchange="actualizarDashboardFases()" style="flex:1;max-width:500px;padding:10px 14px;border-radius:var(--radius-sm);background:var(--bg);border:1px solid var(--card-border);color:var(--text)">
       <option value="">-- Todos los Programas --</option>
       <?php foreach($programas as $p): ?>
         <option value="<?= htmlspecialchars($p['id_ficha']) ?>"><?= htmlspecialchars($p['nombre']) ?> (<?= htmlspecialchars($p['id_ficha']) ?>)</option>
