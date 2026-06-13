@@ -75,25 +75,35 @@ let proyectosData = [];
 function cargarProyectos(){
   fetch(`${API}?action=list_proyectos`).then(r=>r.json()).then(d=>{
     proyectosData = d;
-    cargarFases();
-  }).catch(() => {
-    // Si la URL dice ?tab=pdf y estamos cargando la página...
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasPdfParam = urlParams.get('tab') === 'pdf';
-    
-    if (hasPdfParam && document.getElementById('tabBtnPDF')) {
-      document.getElementById('tabBtnPDF').click();
-    } else if (document.getElementById('tabBtnProyectos')) {
-      document.getElementById('tabBtnProyectos').click();
+    const idFicha = getProgramaId();
+    if(idFicha) {
+      seleccionarProyecto(idFicha);
+    } else {
+      mostrarMensajeVacio("Selecciona un programa de formación en la parte superior para ver su proyecto formativo.");
     }
+  }).catch(() => {
+    console.error("Error al cargar proyectos");
   });
+}
 
-  // Cargar proyectos al inicio
-  document.addEventListener('DOMContentLoaded', cargarProyectos);
+function mostrarMensajeVacio(mensaje) {
+  const container = document.getElementById('proyectoContenedor');
+  const emptyState = document.getElementById('emptyState');
+  if(container) container.style.display = 'none';
+  if(emptyState) {
+    emptyState.style.display = 'block';
+    const p = emptyState.querySelector('p');
+    if(p) p.innerHTML = mensaje;
+  }
 }
 
 function seleccionarProyecto(id_ficha){
-  if(!id_ficha || !document.getElementById('proyectoContenedor')) return;
+  if(!document.getElementById('proyectoContenedor')) return;
+  
+  if(!id_ficha) {
+    mostrarMensajeVacio("Selecciona un programa de formación en la parte superior para ver su proyecto formativo.");
+    return;
+  }
   
   // Si proyectosData aún no carga, intentarlo luego
   if(proyectosData.length === 0) {
@@ -104,8 +114,7 @@ function seleccionarProyecto(id_ficha){
   const p = proyectosData.find(x => x.id_ficha == id_ficha);
   
   if(!p) {
-    document.getElementById('proyectoContenedor').style.display = 'none';
-    document.getElementById('emptyState').style.display = 'block';
+    mostrarMensajeVacio("Este programa no tiene un proyecto formativo cargado.");
     return;
   }
   
@@ -509,5 +518,6 @@ document.addEventListener('keydown', e => {
 });
 
 /* ── Init ── */
+cargarProyectos();
 cargarFases();
 onProgramaChange();
