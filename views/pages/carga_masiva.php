@@ -39,10 +39,6 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
         Limpiar y Subir Otro
       </button>
-      <a href="/sistema_gestion_datos/views/pages/historial_importaciones.php" class="btn btn-secondary btn-sm" style="display:flex;align-items:center;gap:6px">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:15px;height:15px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Ver Historial
-      </a>
       <a href="data:text/csv;charset=utf-8,documento;tipo_documento;nombres;apellidos;estado;ficha;programa;competencia;resultado_aprendizaje;tipo_juicio;fecha_juicio;documento_funcionario;nombre_funcionario%0A1020304050;C%C3%A9dula de ciudadan%C3%ADa;Juan David;Mart%C3%ADnez Torres;En formaci%C3%B3n;1;Tecnolog%C3%ADa en ADSO;Construir soluciones de software;Implementar BD relacionales;Aprobado;2025-04-01 09:00:00;1;Carlos G%C3%B3mez" download="plantilla_sena.csv" class="btn btn-secondary btn-sm">⬇ Plantilla CSV</a>
     </div>
 
@@ -211,98 +207,52 @@ function subirArchivo() {
   const fd = new FormData();
   fd.append('archivo', selectedFile);
 
-  let currentJobId = null;
-
   fetch('/sistema_gestion_datos/controllers/upload_aprendices.php', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(d => {
-      if (d.error) {
-        clearInterval(iv);
-        document.getElementById('btnSubir').disabled = false;
-        showMsg('error', d.message); 
-        return;
-      }
-      
-      currentJobId = d.job_id;
-      pollStatus(currentJobId);
+      clearInterval(iv);
+      pb.style.width = '100%';
+      ppct.textContent = '100%';
+      plbl.textContent = 'Completado';
+      document.getElementById('btnSubir').style.display = 'none';
+      document.getElementById('btnLimpiarUpload').style.display = 'flex';
+
+      if (d.error) { showMsg('error', d.message); return; }
+
+      const erroresHtml = (d.errores || []).slice(0, 8).join('<br>');
+      const resHtml = `
+        <div class="alert alert-success">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <div><strong>¡Carga exitosa!</strong> Se procesaron <strong>${d.total_filas}</strong> filas.</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px">
+          <div style="background:rgba(57,169,0,0.1);border:1px solid rgba(57,169,0,0.25);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:800;color:#39A900">${d.programas}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Programas</div>
+          </div>
+          <div style="background:rgba(0,188,212,0.1);border:1px solid rgba(0,188,212,0.25);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:800;color:#00BCD4">${d.aprendices}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Aprendices</div>
+          </div>
+          <div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:800;color:#3B82F6">${d.funcionarios}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Funcionarios</div>
+          </div>
+          <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:800;color:#F59E0B">${d.juicios}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Juicios</div>
+          </div>
+        </div>
+        ${d.columnas_detectadas ? `<div style="margin-top:10px;font-size:.75rem;color:#7a8fa6">Columnas detectadas: <em>${d.columnas_detectadas.join(', ')}</em></div>` : ''}
+        ${d.errores && d.errores.length ? `<div class="alert alert-warning" style="margin-top:10px"><div><strong>${d.errores.length} advertencias:</strong><br>${erroresHtml}</div></div>` : ''}`;
+
+      document.getElementById('resultados').innerHTML = resHtml;
     })
     .catch(e => {
       clearInterval(iv);
       document.getElementById('btnSubir').disabled = false;
       showMsg('error', 'Error de conexión: ' + e.message);
     });
-
-  function pollStatus(jobId) {
-    fetch(`/sistema_gestion_datos/controllers/job_status.php?id=${jobId}`)
-      .then(r => r.json())
-      .then(job => {
-        clearInterval(iv);
-        const progresoReal = job.progreso || 0;
-        pb.style.width = progresoReal + '%';
-        ppct.textContent = progresoReal + '%';
-        
-        if (job.estado === 'completado' || job.estado === 'error_parcial') {
-          pb.style.width = '100%';
-          ppct.textContent = '100%';
-          plbl.textContent = 'Completado';
-          document.getElementById('btnSubir').style.display = 'none';
-          document.getElementById('btnLimpiarUpload').style.display = 'flex';
-
-          const res = job.resultado || {};
-          const d = {
-            total_filas: res.total_filas || 0,
-            programas: res.programas || 0,
-            aprendices: res.aprendices || 0,
-            funcionarios: res.funcionarios || 0,
-            juicios: res.juicios || 0,
-            columnas_detectadas: res.columnas_detectadas || null,
-            errores_log: job.errores_log || []
-          };
-
-          const erroresHtml = d.errores_log.slice(0, 8).map(e => `Fila ${e.fila || 'N/A'}: ${e.mensaje_error}`).join('<br>');
-          const resHtml = `
-            <div class="alert alert-success">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <div><strong>¡Carga ${job.estado === 'error_parcial' ? 'parcialmente exitosa' : 'exitosa'}!</strong> Se procesaron <strong>${d.total_filas}</strong> filas.</div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px">
-              <div style="background:rgba(57,169,0,0.1);border:1px solid rgba(57,169,0,0.25);border-radius:8px;padding:12px;text-align:center">
-                <div style="font-size:1.6rem;font-weight:800;color:#39A900">${d.programas}</div>
-                <div style="font-size:.72rem;color:#7a8fa6">Programas</div>
-              </div>
-              <div style="background:rgba(0,188,212,0.1);border:1px solid rgba(0,188,212,0.25);border-radius:8px;padding:12px;text-align:center">
-                <div style="font-size:1.6rem;font-weight:800;color:#00BCD4">${d.aprendices}</div>
-                <div style="font-size:.72rem;color:#7a8fa6">Aprendices</div>
-              </div>
-              <div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:12px;text-align:center">
-                <div style="font-size:1.6rem;font-weight:800;color:#3B82F6">${d.funcionarios}</div>
-                <div style="font-size:.72rem;color:#7a8fa6">Funcionarios</div>
-              </div>
-              <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:12px;text-align:center">
-                <div style="font-size:1.6rem;font-weight:800;color:#F59E0B">${d.juicios}</div>
-                <div style="font-size:.72rem;color:#7a8fa6">Juicios</div>
-              </div>
-            </div>
-            ${d.columnas_detectadas ? `<div style="margin-top:10px;font-size:.75rem;color:#7a8fa6">Columnas detectadas: <em>${d.columnas_detectadas.join(', ')}</em></div>` : ''}
-            ${d.errores_log && d.errores_log.length ? `<div class="alert alert-warning" style="margin-top:10px"><div><strong>${d.errores_log.length} advertencias detectadas.</strong> (Ve al historial para detalles completos)<br>${erroresHtml}</div></div>` : ''}`;
-
-          document.getElementById('resultados').innerHTML = resHtml;
-        } else if (job.estado === 'error') {
-          plbl.textContent = 'Error en la importación';
-          document.getElementById('btnSubir').disabled = false;
-          document.getElementById('btnLimpiarUpload').style.display = 'flex';
-          showMsg('error', 'Error del worker: ' + job.errores);
-        } else {
-          // Sigue pendiente o procesando
-          plbl.textContent = job.estado === 'procesando' ? 'Procesando archivo (segundo plano)...' : 'En cola...';
-          setTimeout(() => pollStatus(jobId), 1500);
-        }
-      })
-      .catch(e => {
-        console.error("Polling error:", e);
-        setTimeout(() => pollStatus(jobId), 2000);
-      });
-  }
 }
 
 function showMsg(type, msg) {
