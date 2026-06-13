@@ -141,38 +141,66 @@ body {
 .brand-text span { font-size: .67rem; color: var(--primary); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
 .sidebar-nav     { flex: 1; padding: 12px 8px; overflow-y: auto; overflow-x: hidden; }
 .nav-label       { font-size: .63rem; font-weight: 700; color: var(--text-dim); letter-spacing: 1.2px; text-transform: uppercase; padding: 10px 12px 4px; white-space: nowrap; overflow: hidden; transition: opacity 0.2s; }
-.nav-item        { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--text-muted); text-decoration: none; font-size: .845rem; font-weight: 500; transition: var(--transition); margin-bottom: 2px; white-space: nowrap; overflow: hidden; position: relative; }
+.nav-item        { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--text-muted); text-decoration: none; font-size: .845rem; font-weight: 500; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 2px; white-space: nowrap; overflow: hidden; position: relative; }
 .nav-item:hover  { background: var(--bg2); color: var(--text); }
 .nav-item.active { background: var(--primary-subtle); color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary); }
-.nav-item svg    { width: 18px; height: 18px; min-width: 18px; flex-shrink: 0; }
+.nav-item svg    { width: 20px; height: 20px; min-width: 20px; flex-shrink: 0; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .nav-item span   { overflow: hidden; text-overflow: ellipsis; transition: opacity 0.2s; }
 .sidebar-footer  { padding: 12px 14px; border-top: 1px solid var(--divider); font-size: .72rem; color: var(--text-dim); text-align: center; white-space: nowrap; overflow: hidden; flex-shrink: 0; }
 
-/* Sidebar tooltip en modo rail */
-.nav-item[title]:hover::after {
-  content: attr(title);
-  position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
-  background: var(--bg4); color: var(--text); font-size: .78rem; font-weight: 500;
-  padding: 5px 10px; border-radius: var(--radius-sm); white-space: nowrap;
-  box-shadow: var(--shadow); z-index: 200; pointer-events: none;
-  opacity: 0; animation: tooltipFade 0.15s 0.3s forwards;
-}
-@keyframes tooltipFade { to { opacity: 1; } }
-
-/* ─ SIDEBAR RAIL (modo compacto: solo iconos, ≥ 781px) ─── */
+/* ─ SIDEBAR RAIL (modo compacto: app dock style, ≥ 781px) ─── */
 @media (min-width: 781px) {
-  :root { --sidebar-w: var(--sidebar-w-sm); }
+  :root { --sidebar-w: 80px; } /* Slightly wider to accommodate squircle icons comfortably */
 
-  .sidebar { width: var(--sidebar-w-sm); overflow: visible; }
+  .sidebar { width: var(--sidebar-w); overflow: visible; padding-top: 10px; }
   .brand-text  { opacity: 0; width: 0; pointer-events: none; }
+  .sidebar-brand { padding: 16px; display: flex; justify-content: center; }
+  .brand-icon { margin: 0 auto; width: 44px; height: 44px; border-radius: 12px; }
+  
   .nav-label   { opacity: 0; height: 0; padding: 0; margin: 0; }
-  .nav-item    { justify-content: center; padding: 11px 0; margin-bottom: 8px; }
+  
+  /* App-dock icon style */
+  .nav-item {
+    justify-content: center;
+    width: 46px; height: 46px; padding: 0; margin: 0 auto 12px auto;
+    border-radius: 14px; border: none;
+    background: transparent;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .nav-item:hover { 
+    transform: translateY(-4px) scale(1.1); 
+    background: var(--bg2); 
+    box-shadow: var(--shadow); 
+    color: var(--text);
+  }
+  .nav-item:active { transform: scale(0.95); }
+  
+  .nav-item.active { 
+    background: var(--primary); color: #fff; 
+    box-shadow: 0 8px 16px var(--primary-glow); 
+    border: none; transform: scale(1.05);
+  }
+  .nav-item.active svg { color: #fff; transform: scale(1.15); }
+  
   .nav-item span { opacity: 0; width: 0; overflow: hidden; }
-  .nav-item.active { border-left: none; border-right: 3px solid var(--primary); border-radius: var(--radius-sm); }
   .sidebar-footer { opacity: 0; height: 0; padding: 0; }
 
   /* Tooltip on hover in rail mode */
-  .nav-item:hover::after { opacity: 0; animation: tooltipFade 0.15s 0.25s forwards; }
+  .nav-item[title]:hover::after {
+    content: attr(title);
+    position: absolute; left: calc(100% + 16px); top: 50%; transform: translateY(-50%);
+    background: var(--card); color: var(--text); font-size: .8rem; font-weight: 600;
+    padding: 8px 14px; border-radius: 10px; white-space: nowrap;
+    box-shadow: var(--shadow-lg); border: 1px solid var(--card-border);
+    z-index: 200; pointer-events: none;
+    opacity: 0; animation: dockTooltipFade 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation-delay: 0.1s;
+  }
+}
+
+@keyframes dockTooltipFade {
+  from { opacity: 0; transform: translate(-15px, -50%) scale(0.95); }
+  to { opacity: 1; transform: translate(0, -50%) scale(1); }
 }
 
 /* ─ MOBILE OVERLAY SIDEBAR (< 781px) ─── */
