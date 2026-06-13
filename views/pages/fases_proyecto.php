@@ -235,6 +235,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.getElementById(btn.dataset.tab).classList.add('active');
   });
 });
+
+// Auto-seleccionar tab si viene en URL (?tab=pdf)
+const urlParams = new URLSearchParams(window.location.search);
+if(urlParams.get('tab') === 'pdf') {
+  document.getElementById('tabBtnPDF').click();
+}
 </script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

@@ -9,7 +9,7 @@ require_once __DIR__ . '/../layouts/header.php';
       Proyectos Formativos
     </div>
     <div style="display:flex;gap:12px">
-      <a href="fases_proyecto.php" class="btn btn-primary btn-sm">+ Cargar Nuevo PDF</a>
+      <a href="fases_proyecto.php?tab=pdf" class="btn btn-primary btn-sm">+ Cargar Nuevo PDF</a>
       <button class="btn btn-secondary btn-sm" onclick="cargarProyectos()">↻ Actualizar</button>
     </div>
   </div>
