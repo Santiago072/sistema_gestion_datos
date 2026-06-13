@@ -4,24 +4,19 @@ Este documento detalla el ciclo de vida de los datos dentro del sistema, desde s
 
 ---
 
-## 1. Importación de Aprendices / Juicios desde Excel (Asíncrono)
+## 1. Importación de Aprendices / Juicios desde Excel (Síncrono)
 
 ```
-Usuario → Selecciona archivo .xlsx
-       → POST carga_masiva.php
-       → Archivo guardado en disco (tmp/)
-       → INSERT trabajos_importacion (estado='pendiente')
-       → PHP lanza worker.php en segundo plano (start /B)
-       → Frontend recibe job_id y hace polling al estado
-       → worker.php procesa en lotes via SimpleXLSXAdapter
+Usuario → Selecciona archivo .xlsx y tipo de carga
+       → POST upload_aprendices.php (o juicios)
+       → Archivo leído directamente por SimpleXLSX
        → Motor de Validación (duplicados, campos obligatorios, FK)
-       → Bulk INSERT en aprendices / juicios / competencias / resultados
-       → logs_importacion registra errores por fila
-       → Estado del job → 'completado' o 'error_parcial'
-       → Frontend muestra resumen final
+       → Procesamiento e inserciones inmediatas en base de datos
+       → Respuesta HTML finalizando la carga
+       → Frontend muestra el total de procesados y errores
 ```
 
-**Tablas involucradas:** `trabajos_importacion`, `logs_importacion`, `aprendices`, `programas`, `juicios`, `competencias`, `resultados`.
+**Tablas involucradas:** `aprendices`, `programas`, `juicios`, `competencias`, `resultados`.
 
 ---
 

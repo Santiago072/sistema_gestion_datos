@@ -17,35 +17,32 @@ Gestiona el catálogo de programas de formación SENA. Define los programas, fic
 - La ficha es el filtro global principal del dashboard.
 
 ## 3. Fases Formativas (`fases_proyecto.php`)
-Administra las fases del Proyecto Formativo SENA (GFPI-F-016): Análisis, Planeación, Ejecución, Evaluación.
+Administra los Proyectos Formativos (GFPI-F-016) y sus fases: Análisis, Planeación, Ejecución, Evaluación.
 
 ### Funcionalidades clave
+- **Unificación de Proyectos:** Una pestaña de resumen global por programa que integra totales y desgloses.
 - **CRUD manual** de Fases y Actividades con modales.
 - **Carga desde PDF:** El usuario sube el PDF del Proyecto Formativo. El sistema lo procesa automáticamente mediante la micro-API Flask (Python + pdfplumber).
 - **Búsqueda en tiempo real** en la lista de fases y actividades, con resaltado del término buscado.
-- **Filtro por programa:** El selector de ficha filtra tanto fases como actividades.
-- **Bulk Insert:** Las importaciones masivas desde PDF usan `FasesImportService` con lotes de 500 registros para máxima eficiencia.
+- **Filtro por programa:** El selector de ficha filtra fases, actividades y proyectos.
 
 ### Arquitectura interna
 ```
-fases_proyecto.php  (Vista HTML)
-    └── assets/js/fases.js         (Lógica JS: filtros, CRUD, modales)
+fases_proyecto.php  (Vista HTML con tabs)
+    └── assets/js/fases.js         (Lógica JS: filtros, CRUD, visualización del proyecto)
     └── assets/js/pdf_upload.js    (Lógica JS: drag & drop, previsualización)
 
 upload_pdf_fases.php  (Controlador)
     └── checkFlaskApi() / startFlaskApi()   (Auto-inicia Flask si está apagado)
     └── HTTP POST → Flask app.py             (Delega extracción a Python)
     └── FasesImportService.php               (Bulk Insert a MySQL)
-
-controllers/scripts/app.py       (Flask Micro-API)
-    └── extract_pdf.py            (pdfplumber: extrae tablas del PDF)
 ```
 
 ## 4. Juicios Evaluativos
 Gestiona los resultados y juicios que reciben los aprendices en cada competencia y resultado de aprendizaje.
 
 - **Tipos de juicio:** `Aprobado`, `Por evaluar`, `No aprobado`.
-- **Importación desde Excel** de forma asíncrona (cola + worker).
+- **Importación desde Excel** de forma síncrona.
 - Cada juicio se asocia a: Aprendiz → Competencia → Resultado de Aprendizaje → Funcionario Evaluador.
 
 ## 5. Dashboard Principal (`dashboard.php`)
@@ -85,7 +82,5 @@ Vista de cumplimiento de fases por programa. Muestra el porcentaje de avance de 
 ## 7. Carga Masiva (`carga_masiva.php`)
 Módulo para la importación de aprendices y/o juicios evaluativos desde archivos Excel (.xlsx).
 
-- **Procesamiento asíncrono:** el archivo se encola en MySQL (`trabajos_importacion`) y un Auto-Worker PHP lo procesa en segundo plano.
-- **Patrón Adapter:** `SimpleXLSXAdapter` abstrae la dependencia de `SimpleXLSX`.
-- **Auditoría de errores:** La tabla `logs_importacion` guarda un historial exacto de cada fila que falló y el motivo.
-- **Bulk Insert:** Inserciones en lotes para máxima eficiencia.
+- **Procesamiento síncrono:** el archivo se procesa inmediatamente y se inserta en base de datos.
+- **SimpleXLSX:** Abstracción para leer archivos Excel de forma sencilla.
