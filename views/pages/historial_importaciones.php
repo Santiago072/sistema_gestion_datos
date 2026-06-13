@@ -1,7 +1,7 @@
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 
 <!-- Stats Row -->
-<div class="grid-4 mb-24" id="statsRow">
+<div class="kpi-grid mb-24" id="statsRow">
   <div class="kpi-card fade-in" id="statTotal">
     <div class="kpi-value" id="sTotal">—</div>
     <div class="kpi-label">Total Importaciones</div>
