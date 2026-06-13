@@ -1,13 +1,14 @@
 <?php
 $current_page = basename($_SERVER['PHP_SELF']);
 $page_titles  = [
-    'dashboard.php'       => 'Dashboard Principal',
-    'consulta_aprendiz.php' => 'Consulta por Aprendiz',
-    'carga_masiva.php'    => 'Carga Masiva Juicios',
-    'eliminacion_masiva.php'=> 'Eliminar Programas',
-    'fases_proyecto.php'  => 'Fases del Proyecto Formativo',
-    'proyectos_formativos.php' => 'Proyectos Formativos por Ficha',
-    'dashboard_fases.php' => 'Dashboard de Fases',
+    'dashboard.php'              => 'Dashboard Principal',
+    'consulta_aprendiz.php'      => 'Consulta por Aprendiz',
+    'carga_masiva.php'           => 'Carga Masiva Juicios',
+    'eliminacion_masiva.php'     => 'Eliminar Programas',
+    'historial_importaciones.php'=> 'Historial de Importaciones',
+    'fases_proyecto.php'         => 'Fases del Proyecto Formativo',
+    'proyectos_formativos.php'   => 'Proyectos Formativos por Ficha',
+    'dashboard_fases.php'        => 'Dashboard de Fases',
 ];
 $title = $page_titles[$current_page] ?? 'Sistema SENA';
 
@@ -25,6 +26,7 @@ $icons = [
 'eliminar'  => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>',
 'fases'     => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>',
 'dfases'    => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>',
+'historial' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
 ];
 ?>
 <!DOCTYPE html>
@@ -69,8 +71,9 @@ $icons = [
       <?= navItem('/sistema_gestion_datos/views/pages/dashboard.php',         'Dashboard',              $icons['dashboard'], $current_page) ?>
       <?= navItem('/sistema_gestion_datos/views/pages/consulta_aprendiz.php', 'Consulta por Aprendiz',  $icons['consulta'],  $current_page) ?>
       <div class="nav-label">Gestión de Datos</div>
-      <?= navItem('/sistema_gestion_datos/views/pages/carga_masiva.php',      'Carga Masiva Juicios',   $icons['carga'],     $current_page) ?>
-      <?= navItem('/sistema_gestion_datos/views/pages/eliminacion_masiva.php','Eliminar Programas',     $icons['eliminar'],  $current_page) ?>
+      <?= navItem('/sistema_gestion_datos/views/pages/carga_masiva.php',           'Carga Masiva Juicios',      $icons['carga'],     $current_page) ?>
+      <?= navItem('/sistema_gestion_datos/views/pages/eliminacion_masiva.php',    'Eliminar Programas',        $icons['eliminar'],  $current_page) ?>
+      <?= navItem('/sistema_gestion_datos/views/pages/historial_importaciones.php','Historial Importaciones',   $icons['historial'], $current_page) ?>
       <div class="nav-label">Fases Formativas</div>
       <?= navItem('/sistema_gestion_datos/views/pages/proyectos_formativos.php','Proyectos Formativos', $icons['dfases'],    $current_page) ?>
       <?= navItem('/sistema_gestion_datos/views/pages/fases_proyecto.php',    'Gestión de Fases',       $icons['fases'],     $current_page) ?>
