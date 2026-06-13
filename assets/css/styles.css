@@ -162,6 +162,7 @@ body {
   /* App-dock icon style */
   .nav-item {
     justify-content: center;
+    gap: 0;
     width: 46px; height: 46px; padding: 0; margin: 0 auto 12px auto;
     border-radius: 14px; border: none;
     background: transparent;
@@ -182,7 +183,7 @@ body {
   }
   .nav-item.active svg { color: #fff; transform: scale(1.15); }
   
-  .nav-item span { opacity: 0; width: 0; overflow: hidden; }
+  .nav-item span { opacity: 0; width: 0; overflow: hidden; display: none; }
   .sidebar-footer { opacity: 0; height: 0; padding: 0; }
 
   /* Tooltip on hover in rail mode */
