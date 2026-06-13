@@ -126,7 +126,9 @@ function limpiarSubida() {
   document.getElementById('fileName').textContent = '—';
   document.getElementById('fileSize').textContent = '—';
   document.getElementById('fileInfo').style.display = 'none';
-  document.getElementById('btnSubir').style.display = 'none';
+  const btnSubir = document.getElementById('btnSubir');
+  btnSubir.style.display = 'none';
+  btnSubir.disabled = false;
   document.getElementById('btnLimpiarUpload').style.display = 'none';
   document.getElementById('progressWrap').style.display = 'none';
   document.getElementById('resultados').innerHTML = '';
