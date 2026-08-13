@@ -1,35 +1,23 @@
 -- ================================================================
 -- Sistema de Gestión de Datos - SENA Juicios Evaluativos
--- Inicialización de Base de Datos para Docker
+-- Inicialización de Base de Datos
 -- ================================================================
 
--- Crear la base de datos si no existe (Docker suele crearla automáticamente)
 CREATE DATABASE IF NOT EXISTS sena_juicios;
 USE sena_juicios;
 
--- ================================================================
--- TABLAS PRINCIPALES
--- ================================================================
-
--- Tabla: aprendices
-CREATE TABLE IF NOT EXISTS `aprendices` (
-  `id_aprendiz`       INT(11)      NOT NULL AUTO_INCREMENT,
+-- Tabla: funcionarios (instructores/evaluadores)
+CREATE TABLE IF NOT EXISTS `funcionarios` (
+  `id_funcionario`    INT(11)      NOT NULL AUTO_INCREMENT,
   `documento`         VARCHAR(30)  NOT NULL UNIQUE,
-  `nombres`           VARCHAR(255) NOT NULL,
-  `apellidos`         VARCHAR(255) NOT NULL,
+  `nombre`            VARCHAR(255) NOT NULL,
   `email`             VARCHAR(255) NULL,
-  `telefono`          VARCHAR(20)  NULL,
-  `id_ficha`          INT(11)      NULL,
-  `estado`            VARCHAR(50)  NOT NULL DEFAULT 'Activo',
-  `fecha_ingreso`     DATE         NULL,
   `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_aprendiz`),
-  KEY `idx_aprendices_documento` (`documento`),
-  KEY `idx_aprendices_ficha` (`id_ficha`)
+  PRIMARY KEY (`id_funcionario`),
+  KEY `idx_funcionarios_doc` (`documento`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Tabla: programas (referencias a fichas/programas SENA)
+-- Tabla: programas
 CREATE TABLE IF NOT EXISTS `programas` (
   `id_ficha`          INT(11)      NOT NULL AUTO_INCREMENT,
   `nombre`            VARCHAR(255) NOT NULL,
@@ -40,6 +28,72 @@ CREATE TABLE IF NOT EXISTS `programas` (
   `updated_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_ficha`),
   KEY `idx_programas_codigo` (`codigo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Tabla: aprendices
+CREATE TABLE IF NOT EXISTS `aprendices` (
+  `id_aprendiz`       INT(11)      NOT NULL AUTO_INCREMENT,
+  `documento`         VARCHAR(30)  NOT NULL UNIQUE,
+  `tipo_documento`    VARCHAR(50)  NULL,
+  `nombres`           VARCHAR(255) NOT NULL,
+  `apellidos`         VARCHAR(255) NOT NULL,
+  `email`             VARCHAR(255) NULL,
+  `telefono`          VARCHAR(20)  NULL,
+  `id_ficha`          INT(11)      NULL,
+  `estado`            VARCHAR(50)  NOT NULL DEFAULT 'En formación',
+  `fecha_ingreso`     DATE         NULL,
+  `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_aprendiz`),
+  KEY `idx_aprendices_documento` (`documento`),
+  KEY `idx_aprendices_ficha` (`id_ficha`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Tabla: competencias
+CREATE TABLE IF NOT EXISTS `competencias` (
+  `id_competencia`    INT(11)      NOT NULL AUTO_INCREMENT,
+  `codigo`            VARCHAR(50)  NULL,
+  `nombre`            VARCHAR(255) NOT NULL,
+  `descripcion`       TEXT         NULL,
+  `id_ficha`          INT(11)      NULL,
+  `id_aprendiz`       INT(11)      NULL,
+  `id_resultado`      INT(11)      NULL,
+  `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_competencia`),
+  KEY `idx_competencias_codigo` (`codigo`),
+  KEY `idx_competencias_ficha` (`id_ficha`),
+  KEY `idx_competencias_aprendiz` (`id_aprendiz`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Tabla: resultados
+CREATE TABLE IF NOT EXISTS `resultados` (
+  `id_resultado`      INT(11)      NOT NULL AUTO_INCREMENT,
+  `codigo`            VARCHAR(50)  NULL,
+  `nombre`            VARCHAR(255) NOT NULL,
+  `id_juicio`         INT(11)      NULL,
+  `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_resultado`),
+  KEY `idx_resultados_codigo` (`codigo`),
+  KEY `idx_resultados_juicio` (`id_juicio`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Tabla: juicios
+CREATE TABLE IF NOT EXISTS `juicios` (
+  `id_juicio`         INT(11)      NOT NULL AUTO_INCREMENT,
+  `documento_aprendiz` VARCHAR(30) NULL,
+  `id_ficha`          INT(11)      NULL,
+  `id_funcionario`    INT(11)      NULL,
+  `tipo_juicio`       VARCHAR(50)  NOT NULL DEFAULT 'Por evaluar',
+  `fecha_juicio`      DATETIME     NULL,
+  `observaciones`     TEXT         NULL,
+  `estado`            VARCHAR(50)  NOT NULL DEFAULT 'Pendiente',
+  `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_juicio`),
+  KEY `idx_juicios_aprendiz` (`documento_aprendiz`),
+  KEY `idx_juicios_ficha` (`id_ficha`),
+  KEY `idx_juicios_funcionario` (`id_funcionario`),
+  KEY `idx_juicios_tipo` (`tipo_juicio`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Tabla: fichas
@@ -55,39 +109,6 @@ CREATE TABLE IF NOT EXISTS `fichas` (
   `updated_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_ficha`),
   KEY `idx_fichas_numero` (`numero_ficha`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- Tabla: competencias
-CREATE TABLE IF NOT EXISTS `competencias` (
-  `id_competencia`    INT(11)      NOT NULL AUTO_INCREMENT,
-  `codigo`            VARCHAR(50)  NOT NULL,
-  `nombre`            VARCHAR(255) NOT NULL,
-  `descripcion`       TEXT         NULL,
-  `id_ficha`          INT(11)      NULL,
-  `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_competencia`),
-  KEY `idx_competencias_codigo` (`codigo`),
-  KEY `idx_competencias_ficha` (`id_ficha`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- Tabla: juicios_evaluativos
-CREATE TABLE IF NOT EXISTS `juicios_evaluativos` (
-  `id_juicio`         INT(11)      NOT NULL AUTO_INCREMENT,
-  `id_aprendiz`       INT(11)      NOT NULL,
-  `id_competencia`    INT(11)      NOT NULL,
-  `resultado`         VARCHAR(50)  NOT NULL,
-  `estado`            VARCHAR(50)  NOT NULL DEFAULT 'Pendiente',
-  `tipo_juicio`       VARCHAR(50)  NULL,
-  `fecha_juicio`      DATE         NULL,
-  `observaciones`     TEXT         NULL,
-  `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_juicio`),
-  KEY `idx_juicios_aprendiz` (`id_aprendiz`),
-  KEY `idx_juicios_competencia` (`id_competencia`),
-  KEY `idx_juicios_resultado` (`resultado`),
-  KEY `idx_juicios_estado` (`estado`),
-  FOREIGN KEY (`id_aprendiz`) REFERENCES `aprendices` (`id_aprendiz`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Tabla: fases_proyecto
@@ -115,7 +136,7 @@ CREATE TABLE IF NOT EXISTS `actividades_fase` (
   FOREIGN KEY (`id_fase`) REFERENCES `fases_proyecto` (`id_fase`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Tabla: cola_procesamiento (para importaciones asincrónicas)
+-- Tabla: cola_procesamiento
 CREATE TABLE IF NOT EXISTS `cola_procesamiento` (
   `id_tarea`          INT(11)      NOT NULL AUTO_INCREMENT,
   `tipo_tarea`        VARCHAR(50)  NOT NULL,
@@ -130,5 +151,5 @@ CREATE TABLE IF NOT EXISTS `cola_procesamiento` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ================================================================
--- Listo: Base de datos inicializada
+-- Base de datos inicializada
 -- ================================================================
