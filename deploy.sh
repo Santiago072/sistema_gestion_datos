@@ -25,10 +25,10 @@ echo ""
 echo "[2/5] Obteniendo cambios de GitHub..."
 git fetch origin
 
-# 3. Forzar sincronización exacta con main
+# 3. Forzar sincronización exacta con master
 echo ""
-echo "[3/5] Sincronizando con la rama main..."
-git reset --hard origin/main
+echo "[3/5] Sincronizando con la rama master..."
+git reset --hard origin/master
 
 # 4. Reconstruir y levantar contenedores
 echo ""
