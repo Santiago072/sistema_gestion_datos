@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../config/url_config.php';
+
 $current_page = basename($_SERVER['PHP_SELF']);
 $page_titles  = [
     'dashboard.php'       => 'Dashboard Principal',
@@ -33,7 +35,7 @@ $icons = [
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Sistema de Juicios Evaluativos SENA — Gestión de competencias y resultados de aprendizaje">
   <title><?= htmlspecialchars($title) ?> — SENA Juicios</title>
-  <link rel="stylesheet" href="/sistema_gestion_datos/assets/css/styles.css">
+  <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
     // Theme persistence - execute immediately to avoid flash
@@ -65,14 +67,14 @@ $icons = [
     </div>
     <nav class="sidebar-nav">
       <div class="nav-label">Principal</div>
-      <?= navItem('/sistema_gestion_datos/views/pages/dashboard.php',         'Dashboard',              $icons['dashboard'], $current_page) ?>
-      <?= navItem('/sistema_gestion_datos/views/pages/consulta_aprendiz.php', 'Consulta por Aprendiz',  $icons['consulta'],  $current_page) ?>
+      <?= navItem(BASE_URL . 'views/pages/dashboard.php',         'Dashboard',              $icons['dashboard'], $current_page) ?>
+      <?= navItem(BASE_URL . 'views/pages/consulta_aprendiz.php', 'Consulta por Aprendiz',  $icons['consulta'],  $current_page) ?>
       <div class="nav-label">Gestión de Datos</div>
-      <?= navItem('/sistema_gestion_datos/views/pages/carga_masiva.php',      'Carga Masiva Juicios',   $icons['carga'],     $current_page) ?>
-      <?= navItem('/sistema_gestion_datos/views/pages/eliminacion_masiva.php','Eliminar Programas',     $icons['eliminar'],  $current_page) ?>
+      <?= navItem(BASE_URL . 'views/pages/carga_masiva.php',      'Carga Masiva Juicios',   $icons['carga'],     $current_page) ?>
+      <?= navItem(BASE_URL . 'views/pages/eliminacion_masiva.php','Eliminar Programas',     $icons['eliminar'],  $current_page) ?>
       <div class="nav-label">Fases Formativas</div>
-      <?= navItem('/sistema_gestion_datos/views/pages/fases_proyecto.php',    'Proyectos y Fases',      $icons['fases'],     $current_page) ?>
-      <?= navItem('/sistema_gestion_datos/views/pages/dashboard_fases.php',   'Dashboard de Fases',     $icons['dashboard'], $current_page) ?>
+      <?= navItem(BASE_URL . 'views/pages/fases_proyecto.php',    'Proyectos y Fases',      $icons['fases'],     $current_page) ?>
+      <?= navItem(BASE_URL . 'views/pages/dashboard_fases.php',   'Dashboard de Fases',     $icons['dashboard'], $current_page) ?>
     </nav>
     <div class="sidebar-footer">
       SENA &copy; <?= date('Y') ?> — Sistema Evaluativo

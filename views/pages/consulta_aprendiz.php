@@ -1,4 +1,6 @@
-<?php require_once __DIR__ . '/../layouts/header.php'; 
+<?php 
+require_once __DIR__ . '/../../../config/url_config.php';
+require_once __DIR__ . '/../layouts/header.php'; 
 require_once __DIR__ . '/../../config/database.php';
 $db = getDB();
 $aprendices = $db->query("SELECT a.documento, CONCAT(a.nombres,' ',a.apellidos) AS nombre, a.estado, a.id_ficha, CONCAT(p.nombre, ' (', p.id_ficha, ')') AS programa
@@ -216,7 +218,7 @@ function cargarAprendiz(doc) {
     </div>`;
 
   // Avance por competencia
-  fetch(`/sistema_gestion_datos/controllers/avance_competencia.php?documento=${doc}`)
+  fetch(`${window.BASE_URL}controllers/avance_competencia.php?documento=${doc}`)
     .then(r=>r.json()).then(d=>{
       document.getElementById('avanceBarras').innerHTML = d.map(x => {
         const pct = +x.porcentaje_avance||0;
@@ -256,7 +258,7 @@ function cargarAprendiz(doc) {
     });
 
   // Seguimiento resultados
-  fetch(`/sistema_gestion_datos/controllers/seguimiento_resultado.php?documento=${doc}`)
+  fetch(`${window.BASE_URL}controllers/seguimiento_resultado.php?documento=${doc}`)
     .then(r=>r.json()).then(d=>{
       document.getElementById('totalResultados').textContent = d.length + ' resultados';
       const tb = document.querySelector('#tablaResultados tbody');

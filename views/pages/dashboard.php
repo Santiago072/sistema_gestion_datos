@@ -1,4 +1,5 @@
 <?php 
+require_once __DIR__ . '/../../../config/url_config.php';
 require_once __DIR__ . '/../layouts/header.php'; 
 require_once __DIR__ . '/../../config/database.php';
 $db = getDB();
@@ -46,7 +47,7 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
 <div class="card fade-in stagger-3 mb-24">
   <div class="section-header">
     <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/></svg>Filtro Avanzado de Juicios</div>
-    <a id="btnExportarCSV" href="/sistema_gestion_datos/controllers/filtro_avanzado.php?format=csv" class="btn btn-secondary btn-sm">⬇ Exportar CSV</a>
+    <a id="btnExportarCSV" href="<?= BASE_URL ?>controllers/filtro_avanzado.php?format=csv" class="btn btn-secondary btn-sm">⬇ Exportar CSV</a>
   </div>
   <style>
   .modern-search-wrapper { position:relative; width:100%; }
@@ -151,7 +152,7 @@ function cargarDashboard() {
   limpiarFiltro();
 
   // ── KPIs ──
-  fetch('/sistema_gestion_datos/controllers/dashboard_kpis.php' + qs)
+  fetch('<?= BASE_URL ?>controllers/dashboard_kpis.php' + qs)
     .then(r=>r.json()).then(d=>{
       const kpis = [
         {label:'Aprendices Activos',    val:d.total_aprendices_activos,  cls:'green',  icon:'M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z'},
@@ -174,7 +175,7 @@ function cargarDashboard() {
       });
     });
     // ── Formación chart ──
-    fetch('/sistema_gestion_datos/controllers/aprendices_formacion.php' + qs)
+    fetch('<?= BASE_URL ?>controllers/aprendices_formacion.php' + qs)
       .then(r=>r.json()).then(d=>{
         const labels = d.map(x => x.programa);
         const ctx=document.getElementById('chartFormacion').getContext('2d');
@@ -214,7 +215,7 @@ function cargarDashboard() {
       });
 
     // ── Comparativa chart ──
-    fetch('/sistema_gestion_datos/controllers/comparativa_juicios.php' + qs)
+    fetch('<?= BASE_URL ?>controllers/comparativa_juicios.php' + qs)
       .then(r=>r.json()).then(d=>{
         const labels=d.map(x=>{const n=x.nombre_completo.split(' ');return n[0]+' '+n[n.length-1];});
         const ctx=document.getElementById('chartComparativa').getContext('2d');
@@ -227,7 +228,7 @@ function cargarDashboard() {
       });
 
     // ── Retiros por competencia — Curva de Supervivencia ──
-    fetch('/sistema_gestion_datos/controllers/retirados_competencia.php' + qs)
+    fetch('<?= BASE_URL ?>controllers/retirados_competencia.php' + qs)
       .then(r=>r.json()).then(data=>{
         const survival = data.survival || [];
         if(!survival.length) {
@@ -368,7 +369,7 @@ function cargarDashboard() {
 
 
     // ── Auditoría ──
-    fetch('/sistema_gestion_datos/controllers/auditoria_funcionarios.php' + qs)
+    fetch('<?= BASE_URL ?>controllers/auditoria_funcionarios.php' + qs)
       .then(r=>r.json()).then(d=>{
         const tb=document.querySelector('#tablaAuditoria tbody');
         tb.innerHTML=d.map(x=>`<tr>
@@ -441,10 +442,10 @@ function aplicarFiltro(page = 1) {
 
   const exportBtn = document.getElementById('btnExportarCSV');
   if (exportBtn) {
-    exportBtn.href = '/sistema_gestion_datos/controllers/filtro_avanzado.php?format=csv&' + exportParams.toString();
+    exportBtn.href = '<?= BASE_URL ?>controllers/filtro_avanzado.php?format=csv&' + exportParams.toString();
   }
 
-  fetch('/sistema_gestion_datos/controllers/filtro_avanzado.php?'+params)
+  fetch('<?= BASE_URL ?>controllers/filtro_avanzado.php?'+params)
     .then(r=>r.json()).then(response=>{
       document.querySelectorAll('.modern-search-wrapper .spinner').forEach(el=>el.style.display='none');
       

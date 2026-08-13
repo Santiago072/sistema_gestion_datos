@@ -1,7 +1,13 @@
+<?php
+require_once __DIR__ . '/../../config/url_config.php';
+?>
   </main><!-- /.main-content -->
 </div><!-- /.layout -->
 
 <script>
+// Inyectar BASE_URL desde PHP
+window.BASE_URL = '<?= BASE_URL ?? "/" ?>';
+
 // Global utility functions for badges
 window.badgeJuicio = function(t) {
   if (t==='Aprobado')    return `<span class="badge badge-green">✓ Aprobado</span>`;
