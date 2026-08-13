@@ -56,9 +56,10 @@ RUN mkdir -p /var/www/html/logs \
 # Script de inicio con Caddy + PHP-FPM
 RUN echo '#!/bin/bash\n\
 PORT=${PORT:-80}\n\
-echo "Iniciando Sistema de Gestión de Datos en puerto: $PORT"\n\
+DOMAIN=${DOMAIN:-localhost}\n\
+echo "Iniciando Sistema de Gestión de Datos"\n\
 cat > /etc/caddy/Caddyfile << EOF\n\
-gestiondatos.slscode.online {\n\
+:${PORT} {\n\
     root * /var/www/html\n\
     php_fastcgi 127.0.0.1:9000\n\
     file_server\n\
