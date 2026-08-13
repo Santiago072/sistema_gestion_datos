@@ -55,7 +55,7 @@ function procesarPdf() {
   document.getElementById('btnProcesar').textContent = '⏳ Procesando...';
   showPdfMsg('info', '⏳ Extrayendo texto del PDF (sección 3: Planeación)... Esto puede tomar unos segundos.');
 
-  fetch('/sistema_gestion_datos/controllers/upload_pdf_fases.php', { method: 'POST', body: fd })
+  fetch((window.BASE_URL || '/sistema_gestion_datos/') + 'controllers/upload_pdf_fases.php', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(d => {
       document.getElementById('btnProcesar').disabled = false;
@@ -162,7 +162,7 @@ function importarDatos() {
   document.getElementById('btnImportar').disabled = true;
   document.getElementById('btnImportar').textContent = '⏳ Importando...';
 
-  fetch('/sistema_gestion_datos/controllers/import_pdf_fases.php', {
+  fetch((window.BASE_URL || '/sistema_gestion_datos/') + 'controllers/import_pdf_fases.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)

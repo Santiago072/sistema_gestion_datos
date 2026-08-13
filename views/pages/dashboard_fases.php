@@ -168,7 +168,7 @@ let chartBar, chartDonut;
 
 function actualizarDashboardFases() {
   const idFicha = document.getElementById('filtroProgramaGlobal').value;
-  const urlCumplimiento = '/sistema_gestion_datos/controllers/cumplimiento_fases.php' + (idFicha ? `?id_ficha=${idFicha}` : '');
+  const urlCumplimiento = (window.BASE_URL || '/sistema_gestion_datos/') + 'controllers/cumplimiento_fases.php' + (idFicha ? `?id_ficha=${idFicha}` : '');
 
   fetch(urlCumplimiento).then(r=>r.json()).then(fases=>{
 
@@ -331,7 +331,7 @@ function actualizarDashboardFases() {
 
 function cargarDetalle(idFase){
   const idFicha = document.getElementById('filtroProgramaGlobal').value;
-  let url = '/sistema_gestion_datos/controllers/detalle_fases.php?';
+  let url = (window.BASE_URL || '/sistema_gestion_datos/') + 'controllers/detalle_fases.php?';
   const params = new URLSearchParams();
   if (idFase)  params.append('id_fase',  idFase);
   if (idFicha) params.append('id_ficha', idFicha);

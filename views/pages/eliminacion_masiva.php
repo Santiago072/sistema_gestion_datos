@@ -138,7 +138,7 @@ function eliminarFicha(id_ficha, nombre) {
     const fd = new FormData();
     fd.append('id_ficha', id_ficha);
 
-    fetch('/sistema_gestion_datos/controllers/eliminar_programa.php', { method:'POST', body:fd })
+    fetch((window.BASE_URL || '/sistema_gestion_datos/') + 'controllers/eliminar_programa.php', { method:'POST', body:fd })
         .then(r => r.json())
         .then(d => {
             if (d.success) {
@@ -181,7 +181,7 @@ function _ejecutarBusqueda() {
     cont.innerHTML = '<p style="color:var(--text-muted);padding:12px 0;">Buscando...</p>';
 
     const params = new URLSearchParams({ documento: doc, id_ficha: ficha });
-    fetch('/sistema_gestion_datos/controllers/buscar_aprendiz.php?' + params)
+    fetch((window.BASE_URL || '/sistema_gestion_datos/') + 'controllers/buscar_aprendiz.php?' + params)
         .then(r => r.json())
         .then(data => {
             spinner.style.display = 'none';
@@ -223,7 +223,7 @@ function eliminarAprendiz(documento, id_ficha, nombre) {
     fd.append('documento', documento);
     fd.append('id_ficha', id_ficha);
 
-    fetch('/sistema_gestion_datos/controllers/eliminar_aprendiz.php', { method:'POST', body:fd })
+    fetch((window.BASE_URL || '/sistema_gestion_datos/') + 'controllers/eliminar_aprendiz.php', { method:'POST', body:fd })
         .then(r => r.json())
         .then(d => {
             if (d.success) {

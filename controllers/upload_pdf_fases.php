@@ -1,10 +1,7 @@
 <?php
 /**
  * API: Procesar PDF de Proyecto Formativo SENA (GFPI-F-016)
- * Versión 2.0 — Extracción mediante Python + pdfplumber
- * 
- * MEJORA: pdfplumber detecta celdas combinadas correctamente,
- * a diferencia del enfoque anterior con regex sobre texto plano.
+ * Versión 2.0 — Extracción directa mediante Python + pdfplumber
  */
 require_once __DIR__ . '/../config/database.php';
 header('Content-Type: application/json; charset=utf-8');
@@ -37,7 +34,7 @@ if ($file['size'] > 10 * 1024 * 1024) {
 // ── Directorio temporal dentro del proyecto ──
 $tmpDir = __DIR__ . '/../tmp_pdf';
 if (!is_dir($tmpDir)) {
-    mkdir($tmpDir, 0755, true);
+    @mkdir($tmpDir, 0755, true);
 }
 
 // Nombre único para evitar colisiones
@@ -49,82 +46,49 @@ if (!move_uploaded_file($file['tmp_name'], $tmpFile)) {
     exit;
 }
 
-// ── Función para verificar si la API Flask está corriendo ──
-function checkFlaskApi() {
-    $ch = curl_init('http://127.0.0.1:5000/health');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 1);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    return $httpCode === 200;
-}
-
-// ── Función para iniciar la API Flask en segundo plano ──
-function startFlaskApi() {
+// ── Ejecutar extractor Python de forma directa (CLI) ──
+$isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+$pythonCmd = 'python3';
+if ($isWindows) {
     $pythonExe = 'C:\Users\Usuario\AppData\Local\Programs\Python\Python313\python.exe';
-    if (!file_exists($pythonExe)) {
-        $pythonExe = 'python'; // Fallback to PATH
-    }
-    
-    $appPath = __DIR__ . '/scripts/app.py';
-    $cmd = 'start /B "" "' . $pythonExe . '" "' . $appPath . '" > NUL 2> NUL';
-    pclose(popen($cmd, 'r'));
-    
-    // Esperar hasta 5 segundos para que la API inicie
-    for ($i = 0; $i < 10; $i++) {
-        usleep(500000); // 0.5s
-        if (checkFlaskApi()) return true;
-    }
-    return false;
+    $pythonCmd = file_exists($pythonExe) ? '"' . $pythonExe . '"' : 'python';
 }
 
-// Asegurar que Flask esté corriendo
-if (!checkFlaskApi()) {
-    if (!startFlaskApi()) {
-        http_response_code(500);
-        echo json_encode(['error' => 'No se pudo iniciar el microservicio de extracción de PDF. Asegúrate de tener Python y Flask instalados.']);
-        @unlink($tmpFile);
-        exit;
-    }
-}
+$scriptPath = __DIR__ . '/scripts/extract_pdf.py';
+$command = "{$pythonCmd} " . escapeshellarg($scriptPath) . " " . escapeshellarg($tmpFile) . " 2>&1";
 
-// ── Enviar el PDF a la micro-API Flask vía HTTP POST ──
-$cfile = new CURLFile($tmpFile, 'application/pdf', 'documento.pdf');
-$data = ['pdf' => $cfile];
-
-$ch = curl_init('http://127.0.0.1:5000/extract-pdf');
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 120); // 2 minutos máximo para extraer PDFs muy grandes
-
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$curlError = curl_error($ch);
-curl_close($ch);
+$output = [];
+$returnCode = 0;
+exec($command, $output, $returnCode);
 
 // Limpiar archivo temporal en PHP
 @unlink($tmpFile);
 
-if ($response === false) {
+$response = implode("\n", $output);
+
+if (empty($response)) {
     http_response_code(500);
-    echo json_encode(['error' => 'Error de conexión con el servicio Python: ' . $curlError]);
+    echo json_encode(['error' => 'No se recibió respuesta del script de extracción Python']);
     exit;
 }
 
 $data = json_decode($response, true);
 
-if ($httpCode !== 200 || !empty($data['error'])) {
-    http_response_code($httpCode !== 200 ? 500 : 422);
-    $msg = $data['error'] ?? 'Error desconocido en el servicio Python';
-    echo json_encode(['error' => $msg]);
+if (!$data || !is_array($data)) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Error en la extracción del PDF: ' . mb_substr($response, 0, 300)]);
+    exit;
+}
+
+if (!empty($data['error'])) {
+    http_response_code(422);
+    echo json_encode(['error' => $data['error']]);
     exit;
 }
 
 $registros = $data['registros'] ?? [];
 
-// Mapear datos para el frontend (compatible con la función buildMappedData anterior)
+// Mapear datos para el frontend (compatible con el formato previo)
 $mapped = [
     'fases'        => $data['fases'] ?? [],
     'actividades'  => $data['actividades'] ?? [],
@@ -168,7 +132,7 @@ $mapped['resumen']['total_competencias'] = count($mapped['competencias']);
 echo json_encode([
     'ok'               => true,
     'total_caracteres' => array_sum(array_map('strlen', array_column($registros, 'actividad'))) + 100,
-    'total_paginas'    => 0, // pdfplumber no expone esto fácilmente en el script
+    'total_paginas'    => 0,
     'texto_extraido'   => 'Extraído con Python pdfplumber (estructura de tabla preservada)',
     'datos_extraidos'  => [
         'informacion_basica' => $data['informacion_basica'] ?? [],

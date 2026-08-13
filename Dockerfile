@@ -14,6 +14,14 @@ RUN apt-get update && apt-get install -y \
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install mysqli pdo pdo_mysql gd mbstring intl zip
 
+# Instalar Python3 y libreria pdfplumber para extracción de PDF
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    && pip3 install --no-cache-dir --break-system-packages pdfplumber \
+    && rm -rf /var/lib/apt/lists/*
+
 # Instalar Caddy, Composer y dependencias del sistema
 RUN apt-get update && apt-get install -y \
     debian-keyring \

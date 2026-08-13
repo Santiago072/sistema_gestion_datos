@@ -38,6 +38,7 @@ $icons = [
   <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
+    window.BASE_URL = '<?= BASE_URL ?>';
     // Theme persistence - execute immediately to avoid flash
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
