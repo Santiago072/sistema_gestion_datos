@@ -4,9 +4,9 @@
  * Sistema de Juicios Evaluativos SENA
  */
 
-define('DB_HOST',    'localhost');
-define('DB_USER',    'root');
-define('DB_PASS',    '');
+define('DB_HOST',    'gestion_datos_db');
+define('DB_USER',    'sena_user');
+define('DB_PASS',    getenv('DB_PASS') ?: '');
 define('DB_NAME',    'sena_juicios');
 define('DB_CHARSET', 'utf8mb4');
 
