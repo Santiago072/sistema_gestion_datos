@@ -58,11 +58,12 @@ RUN echo '#!/bin/bash\n\
 PORT=${PORT:-80}\n\
 echo "Iniciando Sistema de Gestión de Datos en puerto: $PORT"\n\
 cat > /etc/caddy/Caddyfile << EOF\n\
-:${PORT} {\n\
+gestiondatos.slscode.online {\n\
     root * /var/www/html\n\
     php_fastcgi 127.0.0.1:9000\n\
     file_server\n\
     try_files {path} {path}/ /index.php\n\
+    encode gzip\n\
 }\n\
 EOF\n\
 php-fpm --daemonize\n\
