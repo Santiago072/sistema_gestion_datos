@@ -1,7 +1,7 @@
 <?php 
-require_once __DIR__ . '/../../../config/url_config.php';
+require_once dirname(__DIR__, 2) . '/config/url_config.php';
 require_once __DIR__ . '/../layouts/header.php'; 
-require_once __DIR__ . '/../../config/database.php';
+require_once dirname(__DIR__, 2) . '/config/database.php';
 $db = getDB();
 $aprendices = $db->query("SELECT a.documento, CONCAT(a.nombres,' ',a.apellidos) AS nombre, a.estado, a.id_ficha, CONCAT(p.nombre, ' (', p.id_ficha, ')') AS programa
 FROM aprendices a JOIN programas p ON a.id_ficha = p.id_ficha ORDER BY a.apellidos")->fetchAll();

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config/url_config.php';
+require_once dirname(__DIR__, 2) . '/config/url_config.php';
 
 $current_page = basename($_SERVER['PHP_SELF']);
 $page_titles  = [
