@@ -21,8 +21,7 @@ services:
       - gestion_pdf:/var/www/html/tmp_pdf
       - gestion_logs:/var/www/html/logs
     ports:
-      - "8897:80"
-      - "8443:443"
+      - "8898:80"
     depends_on:
       - gestion_datos_db
     networks:
