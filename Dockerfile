@@ -33,17 +33,11 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /var/www/html
 
-# Copiar composer primero para cachear las dependencias (si existen)
-COPY composer.json composer.lock* ./ || true
+# Copiar solo los archivos que existan
+COPY . .
 
 # Instalar dependencias PHP solo si composer.json existe
 RUN if [ -f composer.json ]; then composer install --no-dev --no-autoloader --no-interaction; fi
-
-# Copiar el resto de archivos del proyecto
-COPY . .
-
-# Regenerar autoloader solo si composer.json existe
-RUN if [ -f composer.json ]; then composer dump-autoload --no-dev --optimize --no-interaction; fi
 
 # Crear carpetas con permisos correctos
 RUN mkdir -p /var/www/html/logs \
