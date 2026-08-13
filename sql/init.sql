@@ -15,8 +15,8 @@ USE sena_juicios;
 CREATE TABLE IF NOT EXISTS `aprendices` (
   `id_aprendiz`       INT(11)      NOT NULL AUTO_INCREMENT,
   `documento`         VARCHAR(30)  NOT NULL UNIQUE,
-  `nombre`            VARCHAR(255) NOT NULL,
-  `apellido`          VARCHAR(255) NOT NULL,
+  `nombres`           VARCHAR(255) NOT NULL,
+  `apellidos`         VARCHAR(255) NOT NULL,
   `email`             VARCHAR(255) NULL,
   `telefono`          VARCHAR(20)  NULL,
   `id_ficha`          INT(11)      NULL,
@@ -152,7 +152,7 @@ INSERT IGNORE INTO `fichas` (`id_ficha`, `numero_ficha`, `programa`, `instructor
 (3, '2024-003', 'Mantenimiento de Equipos de Cómputo', 'Instructor 3', '2024-01-20', '2024-06-20', 'Finalizada');
 
 -- Insertar aprendices de prueba
-INSERT IGNORE INTO `aprendices` (`documento`, `nombre`, `apellido`, `email`, `telefono`, `id_ficha`, `estado`) VALUES
+INSERT IGNORE INTO `aprendices` (`documento`, `nombres`, `apellidos`, `email`, `telefono`, `id_ficha`, `estado`) VALUES
 ('1020304050', 'Juan', 'Pérez', 'juan@example.com', '3101234567', 1, 'En formación'),
 ('1020304051', 'María', 'García', 'maria@example.com', '3101234568', 1, 'En formación'),
 ('1020304052', 'Carlos', 'López', 'carlos@example.com', '3101234569', 2, 'En formación'),

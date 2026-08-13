@@ -261,8 +261,8 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
   </div>
 </div>
 
-<script src="/sistema_gestion_datos/assets/js/fases.js"></script>
-<script src="/sistema_gestion_datos/assets/js/pdf_upload.js"></script>
+<script src="<?= BASE_URL ?>assets/js/fases.js"></script>
+<script src="<?= BASE_URL ?>assets/js/pdf_upload.js"></script>
 
 <script>
 /* ── Tabs ── */
