@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: gestion_datos_app
+    restart: always
+    environment:
+      - PORT=${PORT:-80}
+      - DB_HOST=${DB_HOST:-gestion_datos_db}
+      - DB_NAME=${DB_NAME:-sena_juicios}
+      - DB_USER=${DB_USER:-sena_user}
+      - DB_PASS=${DB_PASS:-}
+      - APP_BASE=${APP_BASE:-/}
+      - SESSION_LIFETIME=${SESSION_LIFETIME:-3600}
+      - COOKIE_SECURE=${COOKIE_SECURE:-1}
+      - UPLOAD_MAX_SIZE=${UPLOAD_MAX_SIZE:-10485760}
+      - ALLOWED_EXTENSIONS=${ALLOWED_EXTENSIONS:-jpg,jpeg,png,gif,webp,pdf,xlsx}
+    volumes:
+      - gestion_uploads:/var/www/html/tmp_uploads
+      - gestion_pdf:/var/www/html/tmp_pdf
+      - gestion_logs:/var/www/html/logs
+    ports:
+      - "8896:80"
+    depends_on:
+      - gestion_datos_db
+    networks:
+      - sodicol_network
+
+  gestion_datos_db:
+    image: mariadb:10.11
+    container_name: gestion_datos_db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MARIADB_DATABASE: ${DB_NAME:-sena_juicios}
+      MARIADB_USER: ${DB_USER:-sena_user}
+      MARIADB_PASSWORD: ${DB_PASS:-}
+    volumes:
+      - gestion_db_data:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - sodicol_network
+
+volumes:
+  gestion_uploads:
+  gestion_pdf:
+  gestion_logs:
+  gestion_db_data:
+
+networks:
+  sodicol_network:
+    external: true
