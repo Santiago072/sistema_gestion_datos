@@ -2,6 +2,7 @@
 require_once dirname(__DIR__, 2) . '/config/url_config.php';
 require_once __DIR__ . '/../layouts/header.php'; 
 require_once dirname(__DIR__, 2) . '/config/database.php';
+?>
 
 <div class="grid-1-2 mb-24">
   <!-- Zona de carga -->
@@ -210,7 +211,7 @@ function subirArchivo() {
   const fd = new FormData();
   fd.append('archivo', selectedFile);
 
-  fetch('/sistema_gestion_datos/controllers/upload_aprendices.php', { method: 'POST', body: fd })
+  fetch(window.BASE_URL + 'controllers/upload_aprendices.php', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(d => {
       clearInterval(iv);
