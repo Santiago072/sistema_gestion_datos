@@ -4,9 +4,22 @@
  * Sistema de Juicios Evaluativos SENA
  */
 
-define('DB_HOST',    'gestion_datos_db');
-define('DB_USER',    'sena_user');
-define('DB_PASS',    getenv('DB_PASS') ?: '');
+// Detectar si estamos en Docker o en local
+$isDocker = file_exists('/.dockerenv') || getenv('DB_HOST') !== false;
+
+// Credenciales según el entorno
+if ($isDocker) {
+    // Docker / Producción
+    define('DB_HOST',    getenv('DB_HOST') ?: 'gestion_datos_db');
+    define('DB_USER',    getenv('DB_USER') ?: 'sena_user');
+    define('DB_PASS',    getenv('DB_PASS') ?: '');
+} else {
+    // Local / Desarrollo (XAMPP)
+    define('DB_HOST',    'localhost');
+    define('DB_USER',    'root');
+    define('DB_PASS',    '');
+}
+
 define('DB_NAME',    'sena_juicios');
 define('DB_CHARSET', 'utf8mb4');
 
