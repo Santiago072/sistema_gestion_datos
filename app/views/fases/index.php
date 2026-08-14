@@ -62,10 +62,19 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
     <div id="fasesContenedor"></div>
   </div>
 
-  <div id="emptyState" class="empty-state card fade-in" style="display:none">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:40px;height:40px;color:#4a5f78;margin:0 auto 12px"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>
-    <p>Este programa no tiene un proyecto formativo cargado.</p>
-    <button class="btn btn-primary mt-16" onclick="document.getElementById('tabBtnPDF').click()">Cargar desde PDF</button>
+  <div id="emptyState" class="card fade-in text-center" style="display:none; padding: 40px 20px;">
+    <div style="width:64px;height:64px;margin:0 auto 16px;border-radius:50%;background:rgba(57,169,0,0.1);display:flex;align-items:center;justify-content:center;color:var(--primary)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:32px;height:32px"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+    </div>
+    <h3 id="emptyStateTitle" style="color:var(--text-light); margin-bottom:8px;">Gestión de Proyectos y Fases Formativas</h3>
+    <p id="emptyStateMsg" class="text-muted" style="max-width:560px; margin:0 auto 20px; font-size:0.95rem;">Selecciona un programa de formación en el menú superior para consultar su proyecto, fases y actividades, o carga un nuevo proyecto desde el archivo PDF (GFPI-F-016).</p>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="document.getElementById('tabBtnPDF').click()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+        Cargar Proyecto desde PDF
+      </button>
+    </div>
+    <div id="listaProyectosDisponibles" style="margin-top:32px; text-align:left;"></div>
   </div>
 </div>
 
