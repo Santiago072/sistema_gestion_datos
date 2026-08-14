@@ -1,6 +1,6 @@
 <?php
-require_once dirname(__DIR__) . '/config/database.php';
-require_once dirname(__DIR__) . '/config/seguridad.php';
+require_once dirname(__DIR__, 2) . '/config/database.php';
+require_once dirname(__DIR__, 2) . '/config/seguridad.php';
 require_once dirname(__DIR__) . '/services/import/ImportAdapterInterface.php';
 require_once dirname(__DIR__) . '/services/import/ExcelAdapter.php';
 require_once dirname(__DIR__) . '/services/import/CsvAdapter.php';
@@ -35,7 +35,7 @@ class CargaController {
             jsonResponse(['error' => true, 'message' => 'Solo se permiten archivos .xlsx, .xls o .csv'], 400);
         }
 
-        $tmpDir = dirname(__DIR__) . '/tmp_uploads';
+        $tmpDir = dirname(__DIR__, 2) . '/tmp_uploads';
         if (!is_dir($tmpDir)) {
             @mkdir($tmpDir, 0755, true);
         }
@@ -201,20 +201,36 @@ class CargaController {
                 }
             }
 
-            // Insertar juicios en lotes
-            $stmtJuicio = $db->prepare("INSERT INTO juicios (tipo_juicio, fecha_hora_juicio, id_funcionario) VALUES (:tipo, :fecha, :func)");
-            $stmtRes = $db->prepare("INSERT INTO resultados (id_juicio, descripcion) VALUES (:id_juicio, :desc)");
-            $stmtComp = $db->prepare("INSERT INTO competencias (id_resultado, nombre, id_aprendiz) VALUES (:id_res, :nombre, :doc)");
+            // Insertar juicios en lotes con columnas exactas de sena_juicios
+            $stmtJuicio = $db->prepare("INSERT INTO juicios (tipo_juicio, fecha_juicio, id_funcionario, id_ficha, documento_aprendiz) VALUES (:tipo, :fecha, :func, :ficha, :doc)");
+            $stmtRes    = $db->prepare("INSERT INTO resultados (id_juicio, codigo, nombre) VALUES (:id_juicio, :cod, :nom)");
+            $stmtComp   = $db->prepare("INSERT INTO competencias (id_resultado, codigo, nombre, id_aprendiz, id_ficha) VALUES (:id_res, :cod, :nom, :doc, :ficha)");
 
             foreach ($juiciosInsertar as $j) {
-                $funcId = !empty($j['dfunc']) ? $j['dfunc'] : null;
-                $stmtJuicio->execute([':tipo' => $j['juicio'], ':fecha' => $j['fecha'], ':func' => $funcId]);
+                $funcId = !empty($j['dfunc']) ? (int)$j['dfunc'] : null;
+                $stmtJuicio->execute([
+                    ':tipo'  => $j['juicio'],
+                    ':fecha' => $j['fecha'],
+                    ':func'  => $funcId,
+                    ':ficha' => (int)$j['ficha'],
+                    ':doc'   => $j['doc']
+                ]);
                 $idJuicio = $db->lastInsertId();
 
-                $stmtRes->execute([':id_juicio' => $idJuicio, ':desc' => $j['nres']]);
+                $stmtRes->execute([
+                    ':id_juicio' => $idJuicio,
+                    ':cod'       => $j['res'],
+                    ':nom'       => $j['nres']
+                ]);
                 $idRes = $db->lastInsertId();
 
-                $stmtComp->execute([':id_res' => $idRes, ':nombre' => $j['ncomp'], ':doc' => $j['doc']]);
+                $stmtComp->execute([
+                    ':id_res' => $idRes,
+                    ':cod'    => $j['comp'],
+                    ':nom'    => $j['ncomp'],
+                    ':doc'    => $j['doc'],
+                    ':ficha'  => (int)$j['ficha']
+                ]);
             }
 
             $db->commit();

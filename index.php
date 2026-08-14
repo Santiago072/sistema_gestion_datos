@@ -50,11 +50,11 @@ require_once __DIR__ . '/config/seguridad.php';
 enviar_cabeceras_seguridad();
 
 // ── Controladores ────────────────────────────────────────────────────────────
-require_once __DIR__ . '/controllers/DashboardController.php';
-require_once __DIR__ . '/controllers/AprendizController.php';
-require_once __DIR__ . '/controllers/CargaController.php';
-require_once __DIR__ . '/controllers/FasesController.php';
-require_once __DIR__ . '/controllers/ProgramaController.php';
+require_once __DIR__ . '/app/controllers/DashboardController.php';
+require_once __DIR__ . '/app/controllers/AprendizController.php';
+require_once __DIR__ . '/app/controllers/CargaController.php';
+require_once __DIR__ . '/app/controllers/FasesController.php';
+require_once __DIR__ . '/app/controllers/ProgramaController.php';
 
 // ── Obtener Conexión PDO ─────────────────────────────────────────────────────
 $db = getDB();

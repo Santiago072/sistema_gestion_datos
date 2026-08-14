@@ -74,10 +74,18 @@ let proyectosData = [];
 
 function cargarProyectos(){
   fetch(`${API}&subaction=list_proyectos`).then(r=>r.json()).then(d=>{
-    proyectosData = d;
+    proyectosData = d || [];
     const idFicha = getProgramaId();
     if(idFicha) {
       seleccionarProyecto(idFicha);
+    } else if(proyectosData.length > 0) {
+      // Auto-seleccionar el primer proyecto disponible para mostrar contenido de inmediato
+      const firstId = proyectosData[0].id_ficha;
+      const select = document.getElementById('globalPrograma');
+      if(select) {
+        select.value = firstId;
+      }
+      seleccionarProyecto(firstId);
     } else {
       mostrarMensajeVacio("Selecciona un programa de formación en la parte superior para ver su proyecto formativo.");
     }

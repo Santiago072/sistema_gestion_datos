@@ -1,6 +1,6 @@
 <?php
-require_once dirname(__DIR__) . '/config/database.php';
-require_once dirname(__DIR__) . '/config/seguridad.php';
+require_once dirname(__DIR__, 2) . '/config/database.php';
+require_once dirname(__DIR__, 2) . '/config/seguridad.php';
 require_once dirname(__DIR__) . '/models/ProgramaModel.php';
 require_once dirname(__DIR__) . '/models/AprendizModel.php';
 

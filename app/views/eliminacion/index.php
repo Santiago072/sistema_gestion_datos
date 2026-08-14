@@ -1,7 +1,7 @@
 <?php 
-require_once dirname(__DIR__, 2) . '/config/url_config.php';
+require_once dirname(__DIR__, 3) . '/config/url_config.php';
 require_once dirname(__DIR__) . '/layouts/header.php'; 
-require_once dirname(__DIR__, 2) . '/config/database.php';
+require_once dirname(__DIR__, 3) . '/config/database.php';
 $db = getDB();
 
 // Programas con conteo de aprendices

@@ -1,5 +1,5 @@
 <?php
-require_once dirname(__DIR__, 2) . '/config/url_config.php';
+require_once dirname(__DIR__, 3) . '/config/url_config.php';
 
 $current_module = $_GET['module'] ?? 'dashboard';
 if (isset($_GET['action']) && $_GET['action'] === 'dashboard' && $current_module === 'fases') {

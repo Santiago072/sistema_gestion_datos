@@ -1,6 +1,6 @@
 <?php
-require_once dirname(__DIR__) . '/config/database.php';
-require_once dirname(__DIR__) . '/config/seguridad.php';
+require_once dirname(__DIR__, 2) . '/config/database.php';
+require_once dirname(__DIR__, 2) . '/config/seguridad.php';
 require_once dirname(__DIR__) . '/models/FasesModel.php';
 require_once dirname(__DIR__) . '/models/ProgramaModel.php';
 require_once dirname(__DIR__) . '/models/DashboardFasesRepository.php';
@@ -141,7 +141,7 @@ class FasesController {
             jsonResponse(['error' => 'El archivo no debe superar 10MB'], 400);
         }
 
-        $tmpDir = dirname(__DIR__) . '/tmp_pdf';
+        $tmpDir = dirname(__DIR__, 2) . '/tmp_pdf';
         if (!is_dir($tmpDir)) {
             @mkdir($tmpDir, 0755, true);
         }
@@ -154,7 +154,7 @@ class FasesController {
         $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
         $pythonCmd = 'python3';
         if ($isWindows) {
-            $venvPy = dirname(__DIR__) . '/.venv/Scripts/python.exe';
+            $venvPy = dirname(__DIR__, 2) . '/.venv/Scripts/python.exe';
             $winPy  = 'C:\Users\Usuario\AppData\Local\Programs\Python\Python313\python.exe';
             if (file_exists($venvPy)) {
                 $pythonCmd = $venvPy;
