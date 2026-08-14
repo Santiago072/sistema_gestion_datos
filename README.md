@@ -1,10 +1,10 @@
 # 🎓 Sistema de Gestión de Juicios Evaluativos SENA
 
-Sistema web para la gestión integral de aprendices, programas de formación, fases del Proyecto Formativo y juicios evaluativos del SENA. Centraliza el seguimiento académico, automatiza la importación de datos desde Excel y PDF, y entrega indicadores en tiempo real a través de un Dashboard analítico.
+Sistema web para la gestión, procesamiento y visualización analítica de aprendices, programas de formación, fases del Proyecto Formativo (GFPI-F-016) y juicios evaluativos del SENA. Centraliza el seguimiento académico, automatiza la importación de datos masivos desde Excel/CSV y PDF, y entrega indicadores en tiempo real mediante Dashboards interactivos.
 
 ---
 
-## 📚 Documentación y Manuales
+## 📚 Documentación Técnica
 
 | Documento | Descripción |
 |---|---|
@@ -18,58 +18,52 @@ Sistema web para la gestión integral de aprendices, programas de formación, fa
 
 ---
 
-## ✨ Características
+## ✨ Características Principales
 
-- 📥 **Importación asíncrona desde Excel** — Los aprendices y juicios se procesan en segundo plano (cola MySQL + Worker PHP) sin bloquear la interfaz
-- 📄 **Extracción de PDF automática** — El Proyecto Formativo SENA (GFPI-F-016) se procesa mediante un microservicio Python (Flask + pdfplumber) que se inicia solo, sin intervención manual
-- 👩‍🎓 **Gestión completa de aprendices** — CRUD, importación masiva, búsqueda con filtros múltiples
-- 📊 **Dashboard analítico con 6 KPIs** — Aprendices activos, juicios por estado, curva de supervivencia por competencia, comparativa de instructores
-- 🔍 **Filtro avanzado de juicios** — Búsqueda combinada por documento, competencia, resultado, estado y tipo de juicio con exportación CSV
-- 🗂️ **Gestión de Fases Formativas** — CRUD de fases y actividades con búsqueda en tiempo real y resaltado de términos
-- 🎨 **Design System único** — Un solo archivo CSS con tokens, componentes semánticos y media queries completas (xs a 2xl + print)
-- 🔒 **Consultas preparadas (PDO)** — Protección contra SQL Injection en todas las operaciones
-
----
-
-## 🛠️ Tecnologías
-
-| Capa | Tecnología |
-|---|---|
-| Backend | PHP 8+ (Patrón MVC + Capa de Servicios) |
-| Microservicio PDF | Python 3.10+ · Flask · pdfplumber |
-| Procesamiento Asíncrono | Cola MySQL + Worker PHP CLI |
-| Frontend | HTML5 · CSS3 (Design System) · JavaScript Vanilla |
-| Gráficas | Chart.js |
-| Base de Datos | MySQL (`sena_juicios`) vía PDO |
-| Servidor Local | XAMPP (Apache + MySQL) |
+- 📥 **Carga Masiva desde Excel / CSV** — Ingesta optimizada de aprendices y juicios evaluativos mediante procesamiento en lote (*Bulk Insert*) con transacciones PDO seguras.
+- 📄 **Extracción Inteligente de PDF (GFPI-F-016)** — Extracción automatizada de la Sección 3 (Planeación) de proyectos formativos mediante Python y `pdfplumber`, preservando celdas combinadas, fases, actividades, competencias y resultados de aprendizaje.
+- 👩‍🎓 **Consulta Integral por Aprendiz** — Búsqueda instantánea con autocompletado, visualización de estado, ficha y cumplimiento de competencias.
+- 📊 **Dashboard Analítico** — KPIs en tiempo real con Chart.js: aprendices en formación vs. retirados, juicios evaluados por resultado, curva de avance y auditoría de funcionarios.
+- 🗂️ **Gestión de Fases y Actividades** — Visualización interactiva y CRUD completo de fases, actividades y proyectos asociados por ficha.
+- 🗑️ **Módulo de Depuración Segura** — Eliminación controlada de programas completos o aprendices individuales con validación estricta.
+- 🛡️ **Seguridad Multi-Capa Integrada** — Rate limiting anti-DoS por IP, protección de directorios sensibles (`.htaccess`, `web.config`, `index.php 403`), escape XSS y cabeceras HTTP restrictivas.
 
 ---
 
-## 🏗️ Arquitectura
+## 🛠️ Stack Tecnológico
 
-El sistema sigue el patrón **MVC extendido con Servicios y Repositorios**:
+| Capa | Tecnología | Propósito |
+|---|---|---|
+| **Backend** | PHP 8.2+ | Lógica de negocio, servicios de importación y APIs REST |
+| **Extractor PDF** | Python 3.10+ / `pdfplumber` | Parseo estructural de tablas y celdas del GFPI-F-016 |
+| **Frontend** | Vanilla HTML5 / CSS3 / JavaScript | Interfaz rápida y responsiva sin dependencias pesadas |
+| **Gráficas** | Chart.js 4.4 | Gráficos de barras, dona y métricas de rendimiento |
+| **Base de Datos** | MariaDB 10.11 / MySQL | Persistencia relacional (13 tablas estructuradas) |
+| **Servidor Web / Proxy** | Caddy (Docker) + Nginx (VPS) | Servidor interno ultrarrápido y proxy inverso con SSL |
+
+---
+
+## 🏗️ Arquitectura del Sistema
+
+El sistema opera bajo el patrón **MVC extendido con Servicios de Ingesta**:
 
 ```
-Request (HTTP)
-      │
-      ▼
- Controller          ← Orquesta la operación, delega al Servicio o Modelo
-      │
-      ├──► Service   ← Lógica de negocio compleja (Bulk Insert, importaciones)
-      │
-      ├──► Model     ← Acceso a datos via PDO/MySQL
-      │
-      └──► View      ← HTML + CSS (Design System) + JavaScript externo
-                               │
-                               └──► Python Micro-API (Flask)
-                                    └── pdfplumber (extracción de PDF GFPI-F-016)
+[ Cliente Web / Navegador ]
+            │
+            ▼ (HTTP / JSON)
+[ Capa de Controladores (PHP) ] ──► Rate Limiting por IP + Sanitización
+      │                 │
+      ▼                 ▼
+[ Servicios Import ]  [ Modelos PDO ] ──► Consultas preparadas (SQL Injection Free)
+      │                       │
+      │ (CLI síncrono UTF-8)  ▼
+      ├──► Python Extractor  [ Base de Datos: sena_juicios ]
+      │    (pdfplumber)
 ```
-
-Ver detalles completos en [docs/arquitectura.md](docs/arquitectura.md).
 
 ---
 
-## 📁 Estructura del Proyecto
+## 📁 Estructura de Directorios
 
 ```
 sistema_gestion_datos/
@@ -77,182 +71,85 @@ sistema_gestion_datos/
 │   ├── css/
 │   │   └── styles.css              ← Design System centralizado (tokens + responsive)
 │   └── js/
-│       ├── fases.js                ← Lógica JS del módulo Fases (filtros, CRUD, modales)
-│       └── pdf_upload.js           ← Lógica JS para subida y previsualización de PDF
+│       ├── fases.js                ← Lógica de interacción de proyectos y fases
+│       └── pdf_upload.js           ← Drag & Drop, previsualización y confirmación de PDF
 ├── config/
-│   ├── database.example.php        ← Plantilla de configuración (COPIAR Y RENOMBRAR)
-│   └── database.php                ← ⚠️ NO incluido en el repo (contiene credenciales)
+│   ├── .htaccess                   ← Bloqueo web directo a archivos de configuración
+│   ├── index.php                   ← Respuesta 403 Forbidden
+│   ├── web.config                  ← Regla de denegación para IIS
+│   ├── database.php                ← Conexión PDO multi-entorno (Docker / XAMPP)
+│   ├── seguridad.php               ← Rate limiting IP, escape XSS y cabeceras HTTP
+│   └── url_config.php              ← Detección dinámica de BASE_URL
 ├── controllers/
 │   ├── scripts/
-│   │   ├── extract_pdf.py          ← Extractor de datos de PDF GFPI-F-016 (pdfplumber)
-│   │   └── app.py                  ← Micro-API Flask (HTTP endpoint para el extractor)
-│   ├── upload_pdf_fases.php        ← Recibe PDF → auto-inicia Flask → devuelve JSON
-│   ├── fases_crud.php              ← API REST para CRUD de Fases y Actividades
-│   ├── dashboard_kpis.php          ← KPIs del Dashboard principal
-│   ├── filtro_avanzado.php         ← Búsqueda paginada de juicios
-│   └── ...
-├── docs/                           ← Documentación técnica y manuales
-│   ├── Especificacion_Requisitos.md
-│   ├── Manual_de_Usuario.md
-│   ├── arquitectura.md
-│   ├── flujo_negocio.md
-│   ├── modulos.md
-│   ├── reglas_negocio.md
-│   └── changelog.md
-├── models/
-│   ├── BaseModel.php
-│   ├── AprendizModel.php
-│   ├── DashboardModel.php
-│   ├── DashboardFasesRepository.php ← Consultas estadísticas separadas del modelo transaccional
-│   ├── FasesModel.php
-│   └── JuiciosModel.php
-├── services/
-│   └── Import/
-│       └── FasesImportService.php   ← Bulk Insert de fases/actividades desde PDF
+│   │   └── extract_pdf.py          ← Motor Python para extracción de PDF GFPI-F-016
+│   ├── upload_aprendices.php       ← Ingesta masiva de Excel/CSV
+│   ├── upload_pdf_fases.php        ← Extracción de PDF con respuesta JSON
+│   ├── import_pdf_fases.php        ← Persistencia de fases en la BD
+│   ├── fases_crud.php              ← Endpoints CRUD para fases y actividades
+│   ├── eliminar_programa.php       ← Depuración de programas
+│   ├── eliminar_aprendiz.php       ← Depuración de aprendices
+│   └── dashboard_kpis.php          ← Métricas para el Dashboard
+├── models/                         ← Modelos de datos PDO (Aprendiz, Fases, Dashboard, etc.)
+├── services/                       ← Servicios de negocio y adaptadores de importación
 ├── sql/
-│   └── migrations.sql               ← Script de creación y migración de la BD
+│   ├── init.sql                    ← Estructura completa de las 13 tablas (MariaDB 10.11)
+│   └── migrations.sql              ← Scripts de migración y ajustes de columnas
 ├── views/
 │   ├── layouts/
-│   │   ├── header.php              ← Sidebar + navbar + meta SEO
-│   │   └── footer.php              ← Scripts globales (Chart.js, badges)
-│   └── pages/
-│       ├── dashboard.php
-│       ├── dashboard_fases.php
-│       ├── fases_proyecto.php
-│       ├── carga_masiva.php
-│       ├── consulta_aprendiz.php
-│       ├── eliminacion_masiva.php
-│       └── proyectos_formativos.php
-└── index.php                        ← Punto de entrada de la aplicación
+│   │   ├── header.php              ← Cabecera, navegación lateral y tokens dinámicos
+│   │   └── footer.php              ← Cierre de estructura y scripts
+│   └── pages/                      ← Vistas principales del sistema
+├── deploy.sh                       ← Script de despliegue automático en VPS
+├── docker-compose.yml              ← Orquestación de contenedores (App + MariaDB)
+└── Dockerfile                      ← Imagen base PHP 8.2-FPM + Caddy + Python3/pdfplumber
 ```
 
 ---
 
-## ✅ Requisitos Previos
+## 🚀 Despliegue en VPS (Docker + Nginx)
 
-- [XAMPP](https://www.apachefriends.org/) (Apache + PHP 8+ + MySQL)
-- [Python 3.10+](https://www.python.org/) con `flask` y `pdfplumber`
-- Git
+### 1. Variables de Entorno (`.env`)
+```env
+DB_HOST=gestion_datos_db
+DB_NAME=sena_juicios
+DB_USER=sena_user
+DB_PASS=TuPasswordSeguro123*
+MYSQL_ROOT_PASSWORD=TuRootPassword123*
+APP_BASE=/
+PORT=80
+SESSION_LIFETIME=3600
+COOKIE_SECURE=1
+UPLOAD_MAX_SIZE=10485760
+ALLOWED_EXTENSIONS=jpg,jpeg,png,gif,webp,pdf,xlsx
+```
 
----
-
-## ⚙️ Instalación y Configuración
-
-### 1. Clonar el repositorio
-
+### 2. Despliegue Automático
 ```bash
-git clone https://github.com/Santiago072/sistema_gestion_datos.git
+cd /var/www/sistema_gestion_datos
+bash deploy.sh
 ```
 
-Coloca la carpeta en `C:\xampp\htdocs\` (Windows) o en tu directorio web raíz.
+### 3. Proxy Inverso Nginx en VPS
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name gestiondatos.slscode.online;
 
-### 2. Instalar dependencias Python
+    location / {
+        proxy_pass http://127.0.0.1:8898;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+        client_max_body_size 20M;
+    }
+}
+```
 
+### 4. Certificado SSL con Certbot
 ```bash
-pip install flask pdfplumber
+sudo certbot --nginx -d gestiondatos.slscode.online
 ```
-
-> Solo es necesario para el módulo de importación de PDF. El sistema lo inicia automáticamente cuando se necesita.
-
-### 3. Configurar la base de datos
-
-Copia el archivo de configuración de ejemplo:
-
-```powershell
-# Windows (PowerShell)
-Copy-Item config\database.example.php config\database.php
-```
-
-Edita `config/database.php` con tus credenciales:
-
-```php
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');           // tu contraseña de MySQL
-define('DB_NAME', 'sena_juicios');
-```
-
-> ⚠️ El archivo `config/database.php` está en `.gitignore` y **nunca debe subirse al repositorio**.
-
-### 4. Importar la base de datos
-
-1. Inicia Apache y MySQL desde el Panel de Control de XAMPP.
-2. Abre [phpMyAdmin](http://localhost/phpmyadmin).
-3. Crea una base de datos llamada `sena_juicios`.
-4. Importa el script SQL:
-
-```bash
-mysql -u root sena_juicios < sql/migrations.sql
-```
-
-O desde phpMyAdmin: selecciona la base de datos → **Importar** → elige `sql/migrations.sql`.
-
-### 5. Acceder al sistema
-
-```
-http://localhost/sistema_gestion_datos/
-```
-
----
-
-## 🗄️ Base de Datos
-
-La base de datos `sena_juicios` contiene las siguientes tablas principales:
-
-| Tabla | Descripción |
-|---|---|
-| `aprendices` | Información de cada aprendiz (documento, nombre, programa, estado) |
-| `programas` | Catálogo de programas de formación SENA |
-| `juicios` | Juicios evaluativos (Aprobado / No aprobado / Por evaluar) |
-| `fases_proyecto` | Fases del proyecto formativo (Análisis, Planeación, Ejecución, Evaluación) |
-| `actividades_fase` | Actividades detalladas por fase |
-| `competencias` | Competencias de aprendizaje |
-| `resultados` | Resultados de aprendizaje asociados a competencias |
-| `funcionarios` | Instructores y funcionarios del centro |
-| `trabajos_importacion` | Cola de trabajos asíncronos de importación |
-| `logs_importacion` | Auditoría de errores por fila durante importaciones |
-
----
-
-## 📏 Reglas de Negocio Principales
-
-| Regla | Descripción |
-|---|---|
-| **Asignación de programa** | Todo aprendiz debe pertenecer a un programa/ficha específico |
-| **Multiplicidad de juicios** | Un aprendiz puede tener múltiples juicios a lo largo de su proceso formativo |
-| **Fases canónicas SENA** | Las 4 fases válidas del GFPI-F-016 son: Análisis, Planeación, Ejecución, Evaluación |
-| **Sin duplicados** | Los registros duplicados en Excel se detectan y se reportan sin insertarse |
-| **Transacciones** | Las inserciones masivas usan `BEGIN`/`COMMIT`/`ROLLBACK` para garantizar integridad |
-| **Bulk Insert** | Las importaciones agrupan registros en lotes de 500 para máxima eficiencia |
-| **PDF temporal** | El PDF se elimina del servidor inmediatamente tras ser procesado |
-
-Ver el detalle completo en [docs/reglas_negocio.md](docs/reglas_negocio.md).
-
----
-
-## ⚠️ Seguridad
-
-Este repositorio **no incluye** por defecto:
-- `config/database.php` — credenciales de base de datos
-- `graphify-out/` — metadatos del grafo de conocimiento local
-- `tmp_pdf/` y `tmp_uploads/` — archivos temporales cargados por usuarios
-- `.agents/` y `.claude/` — configuración de agentes de IA locales
-
-Toda esta información está gestionada por [`.gitignore`](.gitignore).
-
----
-
-## 🤝 Contribuir
-
-1. Haz un fork del proyecto.
-2. Crea una rama para tu funcionalidad: `git checkout -b feature/nueva-funcionalidad`
-3. Realiza tus cambios y haz commit siguiendo el formato convencional:
-   - `feat:` nueva funcionalidad
-   - `fix:` corrección de bug
-   - `perf:` mejora de rendimiento
-   - `UI:` cambio de interfaz
-   - `docs:` actualización de documentación
-4. Sube tu rama: `git push origin feature/nueva-funcionalidad`
-5. Abre un Pull Request.
-
-> ⚠️ **Nunca incluyas credenciales, contraseñas ni datos reales de aprendices en tus commits.**
