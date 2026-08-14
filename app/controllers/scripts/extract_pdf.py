@@ -61,11 +61,34 @@ def strip_pipe(text: str) -> str:
     return re.sub(r"\s*\|\s*", " ", text).strip()
 
 
+
+def strip_trailing_stop_sections(text: str) -> str:
+    """
+    Elimina encabezados o secciones posteriores que se cuelan al final de una celda (ej: '3.5.2 No. Aprendices...', '4. RECURSOS...', etc.)
+    """
+    if not text:
+        return ""
+    # Patrones de parada comunes en GFPI-F-016
+    stop_patterns = [
+        r"\s*3\.5(?:\.\d+)?\s+.*$",
+        r"\s*3\.6(?:\.\d+)?\s+.*$",
+        r"\s*4\.\s+RECURSOS.*$",
+        r"\s*5\.\s+RUBROS.*$",
+        r"\s*6\.\s+CONTROL.*$",
+        r"\s*GFPI-F-016.*$",
+        r"\s*P[aá]gina\s+\d+\s+de\s+\d+.*$",
+        r"\s*SERVICIO NACIONAL DE APRENDIZAJE.*$",
+    ]
+    for pat in stop_patterns:
+        text = re.sub(pat, "", text, flags=re.IGNORECASE | re.DOTALL)
+    return text.strip()
+
 def clean(text) -> str:
-    """Normaliza el texto de una celda."""
+    """Normaliza el texto de una celda y remueve secciones posteriores parásitas."""
     if text is None:
         return ""
     text = strip_pipe(str(text))
+    text = strip_trailing_stop_sections(text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
@@ -320,20 +343,24 @@ def extract_table_from_pdf(pdf_path: str) -> dict:
                     r_val = clean(row[col_resultado]) if len(row) > col_resultado else ""
                     c_val = clean(row[col_competencia]) if len(row) > col_competencia else ""
 
+                    # Si la fila entera solo contiene encabezados de fin de sección (ej: 3.5, 4. RECURSOS)
+                    if any(re.search(r"^(?:3\.5|4\.|5\.|6\.|GFPI)", clean(cell), re.I) for cell in [f_val, a_val, r_val, c_val] if cell):
+                        continue
+
                     is_new_fase = bool(detect_fase(f_val))
-                    is_new_act  = bool(a_val and (re.match(r"^\d+[\.\s-]", a_val) or len(a_val) > 20))
+                    is_new_act  = bool(a_val and (re.match(r"^\d+[\.\)\s-]", a_val) or len(a_val) > 25))
                     is_new_res  = bool(re.match(r"^\d{5,9}", r_val))
                     is_new_comp = bool(re.match(r"^\d{7,9}", c_val))
 
-                    # Si es una línea de continuación (sin nuevo código ni nueva fase)
+                    # Si es una línea de continuación de celda
                     if merged_table and not is_new_fase and not is_new_act and not is_new_res and not is_new_comp:
                         prev = merged_table[-1]
-                        if a_val and not prev[col_actividad].endswith(a_val):
-                            prev[col_actividad] = (prev[col_actividad] + " " + a_val).strip()
-                        if r_val and not prev[col_resultado].endswith(r_val):
-                            prev[col_resultado] = (prev[col_resultado] + " " + r_val).strip()
-                        if c_val and not prev[col_competencia].endswith(c_val):
-                            prev[col_competencia] = (prev[col_competencia] + " " + c_val).strip()
+                        if a_val and col_actividad < len(prev) and prev[col_actividad] and not str(prev[col_actividad]).endswith(a_val):
+                            prev[col_actividad] = (str(prev[col_actividad]) + " " + a_val).strip()
+                        if r_val and col_resultado < len(prev) and prev[col_resultado] and not str(prev[col_resultado]).endswith(r_val):
+                            prev[col_resultado] = (str(prev[col_resultado]) + " " + r_val).strip()
+                        if c_val and col_competencia < len(prev) and prev[col_competencia] and not str(prev[col_competencia]).endswith(c_val):
+                            prev[col_competencia] = (str(prev[col_competencia]) + " " + c_val).strip()
                     else:
                         merged_table.append(list(row))
 

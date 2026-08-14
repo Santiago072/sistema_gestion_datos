@@ -246,12 +246,20 @@ function eliminarProyecto(id_ficha){
   
   fetch(`${API}&subaction=delete_proyecto`,{method:'POST',body:JSON.stringify({id_ficha})}).then(r=>r.json()).then(d=>{
     if(d.ok){
+      // Actualizar estado local inmediatamente sin esperar recarga
+      proyectosData = (proyectosData || []).filter(x => x.id_ficha != id_ficha);
+      const container = document.getElementById('proyectoContenedor');
+      if (container) container.style.display = 'none';
+      const fasesCont = document.getElementById('fasesContenedor');
+      if (fasesCont) fasesCont.innerHTML = '';
+      
+      mostrarMensajeVacio("Este programa ya no tiene un proyecto formativo cargado. Puedes subir un nuevo PDF cuando lo desees.");
       cargarProyectos();
-      cargarFases(); // Recargar el tab de CRUD
+      cargarFases();
     } else {
-      alert('Error: '+d.error);
+      alert('Error: ' + d.error);
     }
-  }).catch(e => alert('Error de conexión: '+e));
+  }).catch(e => alert('Error de conexión: ' + e));
 }
 
 /* ── CARGAR FASES ── */

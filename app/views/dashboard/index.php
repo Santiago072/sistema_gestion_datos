@@ -538,13 +538,19 @@ function debounce(func, wait) {
 }
 
 // Debounced version of aplicarFiltro for live search (always starts at page 1)
-const aplicarFiltroDebounced = debounce(() => aplicarFiltro(1), 300);
+const aplicarFiltroDebounced = debounce(() => aplicarFiltro(1), 250);
 
-// Attach live-search listeners to the three inputs
+// Attach live-search listeners to the inputs on input, keyup, change and paste
 ['fDoc', 'fComp', 'fRes'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-        el.addEventListener('keyup', aplicarFiltroDebounced);
+        el.addEventListener('input', aplicarFiltroDebounced);
+        el.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') aplicarFiltro(1);
+            else aplicarFiltroDebounced();
+        });
+        el.addEventListener('change', aplicarFiltroDebounced);
+        el.addEventListener('paste', () => setTimeout(() => aplicarFiltro(1), 50));
     }
 });
 </script>
