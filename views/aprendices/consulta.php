@@ -218,7 +218,7 @@ function cargarAprendiz(doc) {
     </div>`;
 
   // Avance por competencia
-  fetch(`${window.BASE_URL}index.php?module=consulta&action=avance?documento=${doc}`)
+  fetch(`${window.BASE_URL}index.php?module=consulta&action=avance&documento=${doc}`)
     .then(r=>r.json()).then(d=>{
       document.getElementById('avanceBarras').innerHTML = d.map(x => {
         const pct = +x.porcentaje_avance||0;
@@ -258,7 +258,7 @@ function cargarAprendiz(doc) {
     });
 
   // Seguimiento resultados
-  fetch(`${window.BASE_URL}index.php?module=consulta&action=seguimiento?documento=${doc}`)
+  fetch(`${window.BASE_URL}index.php?module=consulta&action=seguimiento&documento=${doc}`)
     .then(r=>r.json()).then(d=>{
       document.getElementById('totalResultados').textContent = d.length + ' resultados';
       const tb = document.querySelector('#tablaResultados tbody');

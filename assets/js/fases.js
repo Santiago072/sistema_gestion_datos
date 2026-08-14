@@ -73,7 +73,7 @@ function onProgramaChange() {
 let proyectosData = [];
 
 function cargarProyectos(){
-  fetch(`${API}?action=list_proyectos`).then(r=>r.json()).then(d=>{
+  fetch(`${API}&subaction=list_proyectos`).then(r=>r.json()).then(d=>{
     proyectosData = d;
     const idFicha = getProgramaId();
     if(idFicha) {
@@ -130,7 +130,7 @@ function seleccionarProyecto(id_ficha){
   
   document.getElementById('fasesContenedor').innerHTML = '<div class="text-center text-muted" style="padding: 20px;">Cargando resumen de fases...</div>';
   
-  fetch(`${API}?action=get_proyecto_detalle&id_ficha=${id_ficha}`).then(r=>r.json()).then(fases => {
+  fetch(`${API}&subaction=get_proyecto_detalle&id_ficha=${id_ficha}`).then(r=>r.json()).then(fases => {
     let html = '';
     
     if(fases.length === 0) {
@@ -236,7 +236,7 @@ function seleccionarProyecto(id_ficha){
 function eliminarProyecto(id_ficha){
   if(!confirm('¿Estás seguro de eliminar TODOS los datos del proyecto formativo de la ficha '+id_ficha+'?\n\n- Se eliminarán las fases, actividades y resultados importados.\n- NO se eliminarán los aprendices ni los juicios evaluativos.\n- Podrás volver a subir el PDF luego.')) return;
   
-  fetch(`${API}?action=delete_proyecto`,{method:'POST',body:JSON.stringify({id_ficha})}).then(r=>r.json()).then(d=>{
+  fetch(`${API}&subaction=delete_proyecto`,{method:'POST',body:JSON.stringify({id_ficha})}).then(r=>r.json()).then(d=>{
     if(d.ok){
       cargarProyectos();
       cargarFases(); // Recargar el tab de CRUD
@@ -249,7 +249,7 @@ function eliminarProyecto(id_ficha){
 /* ── CARGAR FASES ── */
 function cargarFases() {
   const idFicha = getProgramaId();
-  const url = `${API}?action=list_fases` + (idFicha ? `&id_ficha=${idFicha}` : '');
+  const url = `${API}&subaction=list_fases` + (idFicha ? `&id_ficha=${idFicha}` : '');
   document.getElementById('listaFases').innerHTML = '<div class="loading"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div>';
 
   fetch(url)
@@ -349,7 +349,7 @@ function seleccionarFase(id, nombre) {
 /* ── CARGAR ACTIVIDADES ── */
 function cargarActividades(id, nombre) {
   const idFicha = getProgramaId();
-  const url = `${API}?action=list_actividades&id_fase=${id}&nombre_fase=${encodeURIComponent(nombre||'')}` + (idFicha ? `&id_ficha=${idFicha}` : '');
+  const url = `${API}&subaction=list_actividades&id_fase=${id}&nombre_fase=${encodeURIComponent(nombre||'')}` + (idFicha ? `&id_ficha=${idFicha}` : '');
   document.getElementById('listaActividades').innerHTML = '<div class="loading"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div>';
 
   fetch(url)
@@ -444,7 +444,7 @@ function guardarFase() {
   const btnGuardar = document.querySelector('#modalFase .btn-primary');
   if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = 'Guardando…'; }
 
-  fetch(`${API}?action=${id ? 'update_fase' : 'create_fase'}`, {
+  fetch(`${API}&subaction=${id ? 'update_fase' : 'create_fase'}`, {
     method: 'POST', body: JSON.stringify(payload)
   })
     .then(r => r.json())
@@ -454,7 +454,7 @@ function guardarFase() {
 
 function eliminarFase(id, nombre) {
   if (!confirm(`¿Eliminar la fase "${nombre}" y todas sus actividades?\nEsta acción no se puede deshacer.`)) return;
-  fetch(`${API}?action=delete_fase`, { method: 'POST', body: JSON.stringify({ id_fase: id }) })
+  fetch(`${API}&subaction=delete_fase`, { method: 'POST', body: JSON.stringify({ id_fase: id }) })
     .then(() => {
       if (currentFaseId == id) {
         currentFaseId = null;
@@ -489,7 +489,7 @@ function guardarActividad() {
   const btnGuardar = document.querySelector('#modalActividad .btn-primary');
   if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = 'Guardando…'; }
 
-  fetch(`${API}?action=create_actividad`, { method: 'POST', body: JSON.stringify(payload) })
+  fetch(`${API}&subaction=create_actividad`, { method: 'POST', body: JSON.stringify(payload) })
     .then(r => r.json())
     .then(() => { closeModal('modalActividad'); cargarActividades(currentFaseId); })
     .finally(() => { if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Guardar'; } });
@@ -497,7 +497,7 @@ function guardarActividad() {
 
 function eliminarActividad(id, nombre) {
   if (!confirm(`¿Eliminar la actividad "${nombre}"?`)) return;
-  fetch(`${API}?action=delete_actividad`, { method: 'POST', body: JSON.stringify({ id_actividad: id }) })
+  fetch(`${API}&subaction=delete_actividad`, { method: 'POST', body: JSON.stringify({ id_actividad: id }) })
     .then(() => cargarActividades(currentFaseId));
 }
 

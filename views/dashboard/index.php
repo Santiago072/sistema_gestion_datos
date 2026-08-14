@@ -146,7 +146,7 @@ let chartFormacion, chartComparativa, chartRetirosComp;
 function cargarDashboard() {
   const prog = document.getElementById('filtroProgramaGlobal').value;
   const cb = '&_cb=' + new Date().getTime();
-  const qs = prog ? '?programa=' + prog + cb : '?_cb=' + new Date().getTime();
+  const qs = prog ? '&programa=' + prog + cb : '&_cb=' + new Date().getTime();
 
   // Reset filtro avanzado when global filter changes
   limpiarFiltro();
@@ -445,7 +445,7 @@ function aplicarFiltro(page = 1) {
     exportBtn.href = '<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado?format=csv&' + exportParams.toString();
   }
 
-  fetch('<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado?'+params)
+  fetch('<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado&'+params)
     .then(r=>r.json()).then(response=>{
       document.querySelectorAll('.modern-search-wrapper .spinner').forEach(el=>el.style.display='none');
       

@@ -5,6 +5,7 @@ require_once dirname(__DIR__) . '/models/DashboardModel.php';
 require_once dirname(__DIR__) . '/models/JuiciosModel.php';
 require_once dirname(__DIR__) . '/models/RetiradosModel.php';
 require_once dirname(__DIR__) . '/models/ProgramaModel.php';
+require_once dirname(__DIR__) . '/models/AprendizModel.php';
 
 class DashboardController {
     private PDO $db;
@@ -12,6 +13,7 @@ class DashboardController {
     private JuiciosModel $juiciosModel;
     private RetiradosModel $retiradosModel;
     private ProgramaModel $programaModel;
+    private AprendizModel $aprendizModel;
 
     public function __construct(PDO $db) {
         $this->db = $db;
@@ -19,6 +21,7 @@ class DashboardController {
         $this->juiciosModel   = new JuiciosModel($db);
         $this->retiradosModel = new RetiradosModel($db);
         $this->programaModel  = new ProgramaModel($db);
+        $this->aprendizModel  = new AprendizModel($db);
     }
 
     public function index(): void {
@@ -28,31 +31,31 @@ class DashboardController {
 
     public function ajaxKpis(): void {
         verificar_rate_limit(60, 60, 'dashboard_kpis');
-        $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
+        $idFicha = !empty($_GET['programa']) ? (int)$_GET['programa'] : (!empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null);
         jsonResponse($this->dashboardModel->getKpis($idFicha));
     }
 
     public function ajaxAprendicesFormacion(): void {
         verificar_rate_limit(60, 60, 'aprendices_formacion');
-        $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
-        jsonResponse($this->juiciosModel->getAprendicesFormacion($idFicha));
+        $prog = !empty($_GET['programa']) ? $_GET['programa'] : (!empty($_GET['id_ficha']) ? $_GET['id_ficha'] : null);
+        jsonResponse($this->aprendizModel->getFormacion($prog));
     }
 
     public function ajaxComparativaJuicios(): void {
         verificar_rate_limit(60, 60, 'comparativa_juicios');
-        $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
-        jsonResponse($this->juiciosModel->getComparativaJuicios($idFicha));
+        $idFicha = !empty($_GET['programa']) ? (int)$_GET['programa'] : (!empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null);
+        jsonResponse($this->juiciosModel->getComparativa($idFicha));
     }
 
     public function ajaxRetiradosCompetencia(): void {
         verificar_rate_limit(60, 60, 'retirados_competencia');
-        $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
-        jsonResponse($this->retiradosModel->getRetiradosPorCompetencia($idFicha));
+        $idFicha = !empty($_GET['programa']) ? (int)$_GET['programa'] : (!empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null);
+        jsonResponse($this->retiradosModel->getSurvivalData($idFicha));
     }
 
     public function ajaxAuditoriaFuncionarios(): void {
         verificar_rate_limit(60, 60, 'auditoria_funcionarios');
-        $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
+        $idFicha = !empty($_GET['programa']) ? (int)$_GET['programa'] : (!empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null);
         jsonResponse($this->juiciosModel->getAuditoriaFuncionarios($idFicha));
     }
 
