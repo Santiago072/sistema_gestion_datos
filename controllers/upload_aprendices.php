@@ -16,6 +16,8 @@ use Services\Import\CsvAdapter;
 header('Content-Type: application/json; charset=utf-8');
 set_time_limit(300); // 5 minutos máximo
 
+verificar_rate_limit(15, 60, 'upload_excel');
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_FILES['archivo'])) {
     echo json_encode(['error' => true, 'message' => 'No se recibió archivo']); exit;
 }

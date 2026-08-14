@@ -4,6 +4,8 @@ require_once __DIR__ . '/../models/FasesModel.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
+verificar_rate_limit(40, 60, 'fases_crud');
+
 $model = new FasesModel(getDB());
 $action = $_GET['action'] ?? $_POST['action'] ?? 'list';
 

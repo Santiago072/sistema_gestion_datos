@@ -8,6 +8,8 @@ require_once __DIR__ . '/../services/import/FasesImportService.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
+verificar_rate_limit(20, 60, 'import_pdf');
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'Método no permitido']);

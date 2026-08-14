@@ -9,14 +9,16 @@ require_once __DIR__ . '/../models/AprendizModel.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
+verificar_rate_limit(30, 60, 'eliminar_aprendiz');
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Método no permitido']);
     exit;
 }
 
-$documento = trim($_POST['documento'] ?? '');
-$id_ficha  = trim($_POST['id_ficha']  ?? '');
+$documento = sanitizar_entrada($_POST['documento'] ?? '');
+$id_ficha  = sanitizar_entrada($_POST['id_ficha']  ?? '');
 
 if (!$documento || !$id_ficha) {
     http_response_code(400);
