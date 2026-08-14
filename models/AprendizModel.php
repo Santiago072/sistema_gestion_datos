@@ -3,6 +3,12 @@ require_once __DIR__ . '/BaseModel.php';
 
 class AprendizModel extends BaseModel {
 
+    public function getAllWithPrograma(): array {
+        $sql = "SELECT a.documento, CONCAT(a.nombres,' ',a.apellidos) AS nombre, a.estado, a.id_ficha, CONCAT(p.nombre, ' (', p.id_ficha, ')') AS programa FROM aprendices a JOIN programas p ON a.id_ficha = p.id_ficha ORDER BY a.apellidos";
+        return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
     public function buscar(string $documento, string $id_ficha): array {
         $conditions = [];
         $params     = [];

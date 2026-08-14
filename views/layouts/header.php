@@ -1,23 +1,25 @@
 <?php
 require_once dirname(__DIR__, 2) . '/config/url_config.php';
 
-$current_page = basename($_SERVER['PHP_SELF']);
-$page_titles  = [
-    'dashboard.php'       => 'Dashboard Principal',
-    'consulta_aprendiz.php' => 'Consulta por Aprendiz',
-    'carga_masiva.php'    => 'Carga Masiva Juicios',
-    'eliminacion_masiva.php'=> 'Eliminar Programas',
-    'fases_proyecto.php'  => 'Proyectos y Fases',
-    'dashboard_fases.php' => 'Dashboard de Fases',
-];
-$title = $page_titles[$current_page] ?? 'Sistema SENA';
-
-function navItem(string $href, string $label, string $icon, string $current): string {
-    $base   = basename($href);
-    $active = ($base === $current) ? 'active' : '';
-    return "<a href=\"{$href}\" class=\"nav-item {$active}\" title=\"{$label}\">{$icon}<span>{$label}</span></a>";
+$current_module = $_GET['module'] ?? 'dashboard';
+if (isset($_GET['action']) && $_GET['action'] === 'dashboard' && $current_module === 'fases') {
+    $current_module = 'dashboard_fases';
 }
 
+$page_titles = [
+    'dashboard'       => 'Dashboard Principal',
+    'consulta'        => 'Consulta por Aprendiz',
+    'carga'           => 'Carga Masiva Juicios',
+    'eliminacion'     => 'Eliminar Programas',
+    'fases'           => 'Proyectos y Fases',
+    'dashboard_fases' => 'Dashboard de Fases',
+];
+$title = $page_titles[$current_module] ?? 'Sistema SENA';
+
+function navItem(string $href, string $label, string $icon, string $modKey, string $currentMod): string {
+    $active = ($modKey === $currentMod) ? 'active' : '';
+    return "<a href=\"{$href}\" class=\"nav-item {$active}\" title=\"{$label}\">{$icon}<span>{$label}</span></a>";
+}
 $icons = [
 'dashboard' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>',
 'consulta'  => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>',
@@ -68,14 +70,14 @@ $icons = [
     </div>
     <nav class="sidebar-nav">
       <div class="nav-label">Principal</div>
-      <?= navItem(BASE_URL . 'views/pages/dashboard.php',         'Dashboard',              $icons['dashboard'], $current_page) ?>
-      <?= navItem(BASE_URL . 'views/pages/consulta_aprendiz.php', 'Consulta por Aprendiz',  $icons['consulta'],  $current_page) ?>
+      <?= navItem(BASE_URL . '?module=dashboard',       'Dashboard',              $icons['dashboard'], 'dashboard',       $current_module) ?>
+      <?= navItem(BASE_URL . '?module=consulta',        'Consulta por Aprendiz',  $icons['consulta'],  'consulta',        $current_module) ?>
       <div class="nav-label">Gestión de Datos</div>
-      <?= navItem(BASE_URL . 'views/pages/carga_masiva.php',      'Carga Masiva Juicios',   $icons['carga'],     $current_page) ?>
-      <?= navItem(BASE_URL . 'views/pages/eliminacion_masiva.php','Eliminar Programas',     $icons['eliminar'],  $current_page) ?>
+      <?= navItem(BASE_URL . '?module=carga',           'Carga Masiva Juicios',   $icons['carga'],     'carga',           $current_module) ?>
+      <?= navItem(BASE_URL . '?module=eliminacion',     'Eliminar Programas',     $icons['eliminar'],  'eliminacion',     $current_module) ?>
       <div class="nav-label">Fases Formativas</div>
-      <?= navItem(BASE_URL . 'views/pages/fases_proyecto.php',    'Proyectos y Fases',      $icons['fases'],     $current_page) ?>
-      <?= navItem(BASE_URL . 'views/pages/dashboard_fases.php',   'Dashboard de Fases',     $icons['dashboard'], $current_page) ?>
+      <?= navItem(BASE_URL . '?module=fases',           'Proyectos y Fases',      $icons['fases'],     'fases',           $current_module) ?>
+      <?= navItem(BASE_URL . '?module=dashboard_fases', 'Dashboard de Fases',     $icons['dashboard'], 'dashboard_fases', $current_module) ?>
     </nav>
     <div class="sidebar-footer">
       SENA &copy; <?= date('Y') ?> — Sistema Evaluativo

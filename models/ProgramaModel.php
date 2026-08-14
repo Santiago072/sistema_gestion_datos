@@ -3,6 +3,12 @@ require_once __DIR__ . '/BaseModel.php';
 
 class ProgramaModel extends BaseModel {
 
+    public function getAll(): array {
+        $stmt = $this->db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
     public function eliminar(string $id_ficha): void {
         $this->db->beginTransaction();
         try {

@@ -32,14 +32,14 @@ class FasesController {
     public function ajaxCumplimiento(): void {
         verificar_rate_limit(60, 60, 'cumplimiento_fases');
         $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
-        jsonResponse($this->dashboardFasesRepo->getCumplimientoGlobal($idFicha));
+        jsonResponse($this->dashboardFasesRepo->getCumplimiento($idFicha));
     }
 
     public function ajaxDetalle(): void {
         verificar_rate_limit(60, 60, 'detalle_fases');
         $idFase  = !empty($_GET['id_fase']) ? (int)$_GET['id_fase'] : null;
         $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
-        jsonResponse($this->dashboardFasesRepo->getDetalleFase($idFase, $idFicha));
+        jsonResponse($this->dashboardFasesRepo->getDetalleFases($idFase, $idFicha));
     }
 
     public function ajaxCrud(): void {

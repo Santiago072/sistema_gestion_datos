@@ -2,7 +2,7 @@
    fases.js — Módulo Gestión de Fases Formativas
    Depende del HTML de fases_proyecto.php y del diseño en styles.css
    =================================================================== */
-const API = (window.BASE_URL || '/sistema_gestion_datos/') + 'controllers/fases_crud.php';
+const API = (window.BASE_URL || '') + 'index.php?module=fases&action=crud';
 
 let currentFaseId   = null;
 let allFases        = [];     // cache de fases para filtros

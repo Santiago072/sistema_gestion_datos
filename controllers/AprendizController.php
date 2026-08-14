@@ -20,6 +20,7 @@ class AprendizController {
 
     public function consulta(): void {
         $programas = $this->programaModel->getAll();
+        $aprendices = $this->aprendizModel->getAllWithPrograma();
         require dirname(__DIR__) . '/views/aprendices/consulta.php';
     }
 
