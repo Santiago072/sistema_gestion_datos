@@ -80,7 +80,8 @@ sistema_gestion_datos/
 │   ├── database.php                ← Conexión PDO multi-entorno (Docker / XAMPP)
 │   ├── seguridad.php               ← Rate limiting IP, escape XSS y cabeceras HTTP
 │   └── url_config.php              ← Detección dinámica de BASE_URL
-├── controllers/
+├── app/
+│   ├── controllers/
 │   ├── scripts/
 │   │   └── extract_pdf.py          ← Motor Python para extracción de PDF GFPI-F-016
 │   ├── upload_aprendices.php       ← Ingesta masiva de Excel/CSV
@@ -90,12 +91,12 @@ sistema_gestion_datos/
 │   ├── eliminar_programa.php       ← Depuración de programas
 │   ├── eliminar_aprendiz.php       ← Depuración de aprendices
 │   └── dashboard_kpis.php          ← Métricas para el Dashboard
-├── models/                         ← Modelos de datos PDO (Aprendiz, Fases, Dashboard, etc.)
-├── services/                       ← Servicios de negocio y adaptadores de importación
+│   ├── models/                         ← Modelos de datos PDO (Aprendiz, Fases, Dashboard, etc.)
+│   ├── services/                       ← Servicios de negocio y adaptadores de importación
 ├── sql/
 │   ├── init.sql                    ← Estructura completa de las 13 tablas (MariaDB 10.11)
 │   └── migrations.sql              ← Scripts de migración y ajustes de columnas
-├── views/
+│   ├── views/
 │   ├── layouts/
 │   │   ├── header.php              ← Cabecera, navegación lateral y tokens dinámicos
 │   │   └── footer.php              ← Cierre de estructura y scripts
