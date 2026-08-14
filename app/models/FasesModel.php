@@ -156,7 +156,20 @@ class FasesModel extends BaseModel {
     }
 
     public function listProyectos(): array {
-        $st = $this->db->query("SELECT id_ficha, nombre, codigo_programa_sofia, nombre_proyecto, centro_formacion, regional, total_resultados, tiempo_estimado_meses FROM programas WHERE codigo_programa_sofia IS NOT NULL ORDER BY nombre");
+        $sql = "SELECT p.id_ficha, p.nombre, 
+                       COALESCE(p.codigo_programa_sofia, '—') AS codigo_programa_sofia, 
+                       COALESCE(p.nombre_proyecto, p.nombre) AS nombre_proyecto, 
+                       COALESCE(p.centro_formacion, '—') AS centro_formacion, 
+                       COALESCE(p.regional, '—') AS regional, 
+                       COALESCE(p.total_resultados, (SELECT COUNT(*) FROM fase_competencia_resultado fcr WHERE fcr.id_ficha = p.id_ficha)) AS total_resultados, 
+                       COALESCE(p.tiempo_estimado_meses, 0) AS tiempo_estimado_meses,
+                       (SELECT COUNT(*) FROM fases_proyecto fp WHERE fp.id_ficha = p.id_ficha) AS total_fases
+                FROM programas p 
+                WHERE p.nombre_proyecto IS NOT NULL 
+                   OR p.codigo_programa_sofia IS NOT NULL 
+                   OR EXISTS (SELECT 1 FROM fases_proyecto fp WHERE fp.id_ficha = p.id_ficha)
+                ORDER BY p.nombre";
+        $st = $this->db->query($sql);
         return $st->fetchAll();
     }
 

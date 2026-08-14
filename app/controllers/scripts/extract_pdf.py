@@ -15,6 +15,15 @@ Devuelve JSON por stdout con la estructura:
 import sys
 import json
 import re
+import logging
+import warnings
+import os
+
+warnings.filterwarnings("ignore")
+logging.basicConfig(level=logging.ERROR)
+for logger_name in ["pdfminer", "pypdf", "pdfplumber"]:
+    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
+
 
 try:
     import pdfplumber

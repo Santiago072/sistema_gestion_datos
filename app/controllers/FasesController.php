@@ -194,6 +194,12 @@ class FasesController {
             jsonResponse(['error' => 'Error en la extracción del PDF: ' . mb_convert_encoding($errDetalle, 'UTF-8', 'UTF-8, CP1252, ISO-8859-1')], 500);
         }
 
+        $posStart = strpos($response, '{');
+        $posEnd   = strrpos($response, '}');
+        if ($posStart !== false && $posEnd !== false && $posEnd > $posStart) {
+            $response = substr($response, $posStart, $posEnd - $posStart + 1);
+        }
+
         $data = json_decode($response, true);
         if (!$data || !is_array($data)) {
             jsonResponse(['error' => 'Error al decodificar JSON de extracción: ' . mb_substr($response, 0, 300)], 500);
