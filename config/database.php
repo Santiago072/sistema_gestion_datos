@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/seguridad.php';
+enviar_cabeceras_seguridad();
+
 /**
  * Configuración de conexión a la base de datos
  * Sistema de Juicios Evaluativos SENA
