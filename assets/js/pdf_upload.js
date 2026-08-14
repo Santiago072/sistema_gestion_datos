@@ -197,14 +197,27 @@ function importarDatos() {
         }
         detHtml += '</div>';
         document.getElementById('pdfMsg').innerHTML += detHtml;
-        cargarFases();
-        if (typeof cargarProyectos === 'function') cargarProyectos();
+        
+        // Sincronizar programa global
+        const globalSel = document.getElementById('globalPrograma');
+        if (globalSel) {
+          globalSel.value = idFicha;
+        }
+
+        // Recargar datos y refrescar vista de proyecto inmediatamente
+        fetch((window.BASE_URL || '') + 'index.php?module=fases&action=crud&subaction=list_proyectos')
+          .then(r => r.json())
+          .then(proys => {
+            if (typeof proyectosData !== 'undefined') proyectosData = proys || [];
+            if (typeof seleccionarProyecto === 'function') seleccionarProyecto(idFicha);
+            if (typeof cargarFases === 'function') cargarFases();
+          });
         
         // Saltar a la pestaña de proyectos automáticamente
         setTimeout(() => {
           const tabProyectos = document.getElementById('tabBtnProyectos');
           if (tabProyectos) tabProyectos.click();
-        }, 1500);
+        }, 800);
       } else {
         showPdfMsg('error', d.error || 'Error durante la importación');
       }

@@ -418,42 +418,46 @@ let currentFilterPage = 1;
 function aplicarFiltro(page = 1) {
   currentFilterPage = page;
   
-  const prog = document.getElementById('filtroProgramaGlobal').value;
-  const fDoc = document.getElementById('fDoc').value.trim();
-  const fEstado = document.getElementById('fEstado').value;
-  const fComp = document.getElementById('fComp').value.trim();
-  const fRes = document.getElementById('fRes').value.trim();
-  const fTipo = document.getElementById('fTipo').value;
+  const prog = document.getElementById('filtroProgramaGlobal')?.value || '';
+  const fDoc = document.getElementById('fDoc')?.value.trim() || '';
+  const fEstado = document.getElementById('fEstado')?.value || '';
+  const fComp = document.getElementById('fComp')?.value.trim() || '';
+  const fRes = document.getElementById('fRes')?.value.trim() || '';
+  const fTipo = document.getElementById('fTipo')?.value || '';
 
-  // Si todos los campos están vacíos, no hacemos una búsqueda masiva.
+  // Si todos los campos están vacíos, mostrar mensaje inicial
   if (!prog && !fDoc && !fEstado && !fComp && !fRes && !fTipo) {
     limpiarFiltro();
     return;
   }
 
-  const paramsObj = { documento: fDoc, estado: fEstado, competencia: fComp, resultado: fRes, tipo_juicio: fTipo };
-  const params = new URLSearchParams(paramsObj);
-  if (prog) params.set('programa', prog);
-  
-  const exportParams = new URLSearchParams(paramsObj);
-  if (prog) exportParams.set('programa', prog);
-  
-  params.set('page', currentFilterPage);
+  const paramsObj = {};
+  if (fDoc) paramsObj.documento = fDoc;
+  if (fEstado) paramsObj.estado = fEstado;
+  if (fComp) paramsObj.competencia = fComp;
+  if (fRes) paramsObj.resultado = fRes;
+  if (fTipo) paramsObj.tipo_juicio = fTipo;
+  if (prog) paramsObj.programa = prog;
+  paramsObj.page = currentFilterPage;
 
-  // Show chips
+  const params = new URLSearchParams(paramsObj);
+  const exportParams = new URLSearchParams(paramsObj);
+  exportParams.delete('page');
+
+  // Mostrar chips activos
   renderActiveFilters(paramsObj);
 
   // Spinners
-  if(fDoc) document.getElementById('spinDoc').style.display='block';
-  if(fComp) document.getElementById('spinComp').style.display='block';
-  if(fRes) document.getElementById('spinRes').style.display='block';
+  if(fDoc && document.getElementById('spinDoc')) document.getElementById('spinDoc').style.display='block';
+  if(fComp && document.getElementById('spinComp')) document.getElementById('spinComp').style.display='block';
+  if(fRes && document.getElementById('spinRes')) document.getElementById('spinRes').style.display='block';
 
   const exportBtn = document.getElementById('btnExportarCSV');
   if (exportBtn) {
-    exportBtn.href = '<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado?format=csv&' + exportParams.toString();
+    exportBtn.href = '<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado&format=csv&' + exportParams.toString();
   }
 
-  fetch('<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado&'+params)
+  fetch('<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado&' + params.toString())
     .then(r=>r.json()).then(response=>{
       document.querySelectorAll('.modern-search-wrapper .spinner').forEach(el=>el.style.display='none');
       
