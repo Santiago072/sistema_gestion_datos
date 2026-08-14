@@ -1,5 +1,5 @@
 <?php
-require_once dirname(__DIR__, 2) . '/config/url_config.php';
+require_once dirname(__DIR__, 3) . '/config/url_config.php';
 ?>
   </main><!-- /.main-content -->
 </div><!-- /.layout -->
