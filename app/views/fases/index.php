@@ -44,8 +44,8 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
     <div class="card mb-24" style="background: linear-gradient(135deg, rgba(57,169,0,0.1), rgba(0,0,0,0)); border-left: 4px solid #39A900">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <h2 id="pNombre" style="margin-bottom:4px;color:var(--text-light)"></h2>
-          <div style="color:var(--text-muted);font-size:0.9rem" id="pSub"></div>
+          <h2 id="pNombre" style="margin-bottom:4px;color:var(--text-light);word-break:break-word;overflow-wrap:anywhere;line-height:1.35;"></h2>
+          <div style="color:var(--text-muted);font-size:0.9rem;word-break:break-word;overflow-wrap:anywhere;" id="pSub"></div>
           <div style="margin-top:12px;display:flex;gap:16px;font-size:0.85rem">
             <div><strong style="color:var(--text-dim)">Centro:</strong> <span id="pCentro"></span></div>
             <div><strong style="color:var(--text-dim)">Regional:</strong> <span id="pRegional"></span></div>

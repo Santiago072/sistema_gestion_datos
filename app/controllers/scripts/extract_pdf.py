@@ -137,9 +137,7 @@ def fill_down(column: list) -> list:
 def parse_resultado(text: str) -> tuple[str, str]:
     """
     Separa el código del nombre del resultado de aprendizaje.
-    El código es SOLO el número antes del primer guión (ej: 593343).
-    El número de resultado (01, 02…) NO forma parte del código.
-    Retorna (codigo, nombre)
+    Preserva el 100% del texto sin truncar.
     """
     text = clean(text)
     if not text:
@@ -148,18 +146,21 @@ def parse_resultado(text: str) -> tuple[str, str]:
     codigo = ""
     nombre = text
 
-    # Captura SOLO los dígitos antes del primer guión como código
-    m = re.match(r"^(\d{5,7})\s*[-–]\s*\d{2}[-]?\s+(.+)$", text, re.DOTALL)
+    # Formato común SENA: "593343 - 01 DESARROLLAR..." o "593343 - 1 DESARROLLAR..."
+    m = re.match(r"^(\d{5,9})\s*[-–:]\s*(?:\d{1,3}[-–:\.\s]+)?(.+)$", text, re.DOTALL)
     if m:
-        codigo, nombre = m.group(1).strip(), m.group(2).strip()
+        codigo = m.group(1).strip()
+        nombre = m.group(2).strip()
     else:
-        # Fallback para formatos sin número de resultado (ej: "590803 - NOMBRE")
-        m2 = re.match(r"^(\d{5,9})\s*[-–]\s*(.+)$", text, re.DOTALL)
+        # Formato sin guion pero con código inicial: "593343 DESARROLLAR..."
+        m2 = re.match(r"^(\d{5,9})\s+(.+)$", text, re.DOTALL)
         if m2:
-            codigo, nombre = m2.group(1).strip(), m2.group(2).strip()
+            codigo = m2.group(1).strip()
+            nombre = m2.group(2).strip()
 
-    # Quitar guiones iniciales del nombre (ej: "- 02 SOLUCIONAR...")
-    nombre = re.sub(r"^[-–]\s*", "", nombre).strip()
+    # Quitar posibles guiones o numeraciones residuales al inicio del nombre
+    nombre = re.sub(r"^[-–:\.\s]+", "", nombre).strip()
+    nombre = re.sub(r"^\d{1,2}\s+[-–]?\s*", "", nombre).strip()
     
     return (codigo, nombre)
 
@@ -310,14 +311,40 @@ def extract_table_from_pdf(pdf_path: str) -> dict:
                             col_competencia = non_empty_indices[3]
                             break
 
-                # Extraer columnas y aplicar fill_down a Fase y Actividad
+                # ── Unificar filas partidas / continuaciones de celdas ──
+                merged_table = []
+                for row in table:
+                    if not row: continue
+                    f_val = clean(row[col_fase]) if len(row) > col_fase else ""
+                    a_val = clean(row[col_actividad]) if len(row) > col_actividad else ""
+                    r_val = clean(row[col_resultado]) if len(row) > col_resultado else ""
+                    c_val = clean(row[col_competencia]) if len(row) > col_competencia else ""
+
+                    is_new_fase = bool(detect_fase(f_val))
+                    is_new_act  = bool(a_val and (re.match(r"^\d+[\.\s-]", a_val) or len(a_val) > 20))
+                    is_new_res  = bool(re.match(r"^\d{5,9}", r_val))
+                    is_new_comp = bool(re.match(r"^\d{7,9}", c_val))
+
+                    # Si es una línea de continuación (sin nuevo código ni nueva fase)
+                    if merged_table and not is_new_fase and not is_new_act and not is_new_res and not is_new_comp:
+                        prev = merged_table[-1]
+                        if a_val and not prev[col_actividad].endswith(a_val):
+                            prev[col_actividad] = (prev[col_actividad] + " " + a_val).strip()
+                        if r_val and not prev[col_resultado].endswith(r_val):
+                            prev[col_resultado] = (prev[col_resultado] + " " + r_val).strip()
+                        if c_val and not prev[col_competencia].endswith(c_val):
+                            prev[col_competencia] = (prev[col_competencia] + " " + c_val).strip()
+                    else:
+                        merged_table.append(list(row))
+
+                # Extraer columnas con celdas completas
                 def get_col(rows, idx):
                     return [row[idx] if row and len(row) > idx else None for row in rows]
 
-                col_f_raw = fill_down(get_col(table, col_fase))
-                col_a_raw = fill_down(get_col(table, col_actividad))
-                col_r_raw = [clean(c) for c in get_col(table, col_resultado)]
-                col_c_raw = [clean(c) for c in get_col(table, col_competencia)]
+                col_f_raw = fill_down(get_col(merged_table, col_fase))
+                col_a_raw = fill_down(get_col(merged_table, col_actividad))
+                col_r_raw = [clean(c) for c in get_col(merged_table, col_resultado)]
+                col_c_raw = [clean(c) for c in get_col(merged_table, col_competencia)]
 
                 for f, a, r, c in zip(col_f_raw, col_a_raw, col_r_raw, col_c_raw):
                     fase_val = f

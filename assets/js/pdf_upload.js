@@ -80,11 +80,24 @@ function renderPreview(d) {
   const info = d.datos_extraidos;
   let html = '';
 
-  // Info básica detectada
+  // Info básica detectada con ajuste de texto perfecto
   if (info.informacion_basica && Object.keys(info.informacion_basica).length) {
-    html += '<div class="section-title mb-16">📌 Información detectada</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">';
-    Object.entries(info.informacion_basica).forEach(([k,v]) => {
-      html += `<span class="badge badge-cyan" style="padding:6px 12px;font-size:.78rem"><strong>${k}:</strong> ${v}</span>`;
+    const ib = info.informacion_basica;
+    html += '<div class="section-title mb-16">📌 Información detectada del Proyecto Formativo</div>';
+    
+    if (ib.nombre_proyecto) {
+      html += `
+        <div class="card mb-16" style="background:var(--bg2); border-left:4px solid var(--primary); padding:14px 18px; word-break:break-word; overflow-wrap:anywhere;">
+          <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Nombre del Proyecto</div>
+          <div style="font-size:0.95rem; font-weight:700; color:var(--text-light); line-height:1.45;">${escapeHtml(ib.nombre_proyecto)}</div>
+        </div>
+      `;
+    }
+
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">';
+    Object.entries(ib).forEach(([k,v]) => {
+      if (k === 'nombre_proyecto') return; // ya renderizado arriba en tarjeta destacada
+      html += `<span class="badge badge-cyan" style="padding:6px 12px;font-size:.78rem;white-space:normal;word-break:break-word;overflow-wrap:anywhere;max-width:100%;line-height:1.4"><strong>${k}:</strong> ${escapeHtml(v)}</span>`;
     });
     html += '</div>';
   }

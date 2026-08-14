@@ -391,6 +391,14 @@ function getHighlightRegex(term) {
   return new RegExp('('+term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')+')', 'gi');
 }
 
+function removerFiltro(key) {
+  const map = { documento: 'fDoc', competencia: 'fComp', resultado: 'fRes', estado: 'fEstado', tipo_juicio: 'fTipo' };
+  const inputId = map[key] || key;
+  const el = document.getElementById(inputId);
+  if (el) el.value = '';
+  aplicarFiltro(1);
+}
+
 function renderActiveFilters(paramsObj) {
   const container = document.getElementById('activeFilters');
   let chipsHtml = '';
@@ -399,7 +407,7 @@ function renderActiveFilters(paramsObj) {
   };
   for (const [key, val] of Object.entries(paramsObj)) {
     if (val && labels[key]) {
-      chipsHtml += `<div class="filter-chip"><span>${labels[key]}<b>${val}</b></span><button type="button" onclick="document.getElementById('f${key==='tipo_juicio'?'Tipo':key.charAt(0).toUpperCase()+key.slice(1)}').value=''; aplicarFiltro(1)"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>`;
+      chipsHtml += `<div class="filter-chip"><span>${labels[key]}<b>${escapeHtml(val)}</b></span><button type="button" title="Quitar filtro" onclick="removerFiltro('${key}')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>`;
     }
   }
   container.innerHTML = chipsHtml;
