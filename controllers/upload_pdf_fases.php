@@ -8,26 +8,26 @@ header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['error' => 'Método no permitido']);
+    echo json_encode(['error' => 'Método no permitido'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 if (empty($_FILES['pdf']) || $_FILES['pdf']['error'] !== UPLOAD_ERR_OK) {
     http_response_code(400);
-    echo json_encode(['error' => 'No se recibió archivo PDF válido']);
+    echo json_encode(['error' => 'No se recibió archivo PDF válido'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 $file = $_FILES['pdf'];
 if (strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) !== 'pdf') {
     http_response_code(400);
-    echo json_encode(['error' => 'El archivo debe ser PDF']);
+    echo json_encode(['error' => 'El archivo debe ser PDF'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 if ($file['size'] > 10 * 1024 * 1024) {
     http_response_code(400);
-    echo json_encode(['error' => 'El archivo no debe superar 10MB']);
+    echo json_encode(['error' => 'El archivo no debe superar 10MB'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -42,33 +42,59 @@ $tmpFile = $tmpDir . '/pdf_' . uniqid('', true) . '.pdf';
 
 if (!move_uploaded_file($file['tmp_name'], $tmpFile)) {
     http_response_code(500);
-    echo json_encode(['error' => 'No se pudo guardar el archivo PDF temporalmente']);
+    echo json_encode(['error' => 'No se pudo guardar el archivo PDF temporalmente'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// ── Ejecutar extractor Python de forma directa (CLI) ──
+// ── Ejecutar extractor Python usando proc_open (aísla stdout de stderr y fuerza UTF-8) ──
 $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
 $pythonCmd = 'python3';
 if ($isWindows) {
-    $pythonExe = 'C:\Users\Usuario\AppData\Local\Programs\Python\Python313\python.exe';
-    $pythonCmd = file_exists($pythonExe) ? '"' . $pythonExe . '"' : 'python';
+    $venvPy = __DIR__ . '/../.venv/Scripts/python.exe';
+    $winPy  = 'C:\Users\Usuario\AppData\Local\Programs\Python\Python313\python.exe';
+    if (file_exists($venvPy)) {
+        $pythonCmd = $venvPy;
+    } elseif (file_exists($winPy)) {
+        $pythonCmd = $winPy;
+    } else {
+        $pythonCmd = 'python';
+    }
 }
 
 $scriptPath = __DIR__ . '/scripts/extract_pdf.py';
-$command = "{$pythonCmd} " . escapeshellarg($scriptPath) . " " . escapeshellarg($tmpFile) . " 2>&1";
 
-$output = [];
-$returnCode = 0;
-exec($command, $output, $returnCode);
+$descriptors = [
+    0 => ["pipe", "r"],
+    1 => ["pipe", "w"],
+    2 => ["pipe", "w"]
+];
+
+$cmdArray = [$pythonCmd, '-X', 'utf8', $scriptPath, $tmpFile];
+$process  = proc_open($cmdArray, $descriptors, $pipes);
+
+$stdout = '';
+$stderr = '';
+
+if (is_resource($process)) {
+    fclose($pipes[0]);
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    proc_close($process);
+}
 
 // Limpiar archivo temporal en PHP
 @unlink($tmpFile);
 
-$response = implode("\n", $output);
+$response = trim($stdout);
 
 if (empty($response)) {
     http_response_code(500);
-    echo json_encode(['error' => 'No se recibió respuesta del script de extracción Python']);
+    $errDetalle = !empty($stderr) ? $stderr : 'No se recibió respuesta del script de extracción Python';
+    echo json_encode([
+        'error' => 'Error en la extracción del PDF: ' . mb_convert_encoding($errDetalle, 'UTF-8', 'UTF-8, CP1252, ISO-8859-1')
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -76,13 +102,15 @@ $data = json_decode($response, true);
 
 if (!$data || !is_array($data)) {
     http_response_code(500);
-    echo json_encode(['error' => 'Error en la extracción del PDF: ' . mb_substr($response, 0, 300)]);
+    echo json_encode([
+        'error' => 'Error al decodificar JSON de extracción: ' . mb_substr($response, 0, 300)
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 if (!empty($data['error'])) {
     http_response_code(422);
-    echo json_encode(['error' => $data['error']]);
+    echo json_encode(['error' => $data['error']], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
