@@ -324,9 +324,17 @@ class CargaController {
             $db->commit();
 
             jsonResponse([
-                'error'   => false,
-                'message' => "Procesamiento completado con éxito",
-                'data'    => [
+                'ok'                  => true,
+                'error'               => false,
+                'message'             => "Procesamiento completado con éxito",
+                'total_filas'         => count($dataRows),
+                'programas'           => count($programasCache),
+                'aprendices'          => count($aprendicesCache),
+                'funcionarios'        => count($funcionariosCache),
+                'juicios'             => $cntJuicios,
+                'columnas_detectadas' => array_values(array_filter($headers)),
+                'errores'             => $errores,
+                'data'                => [
                     'total_procesados' => count($dataRows),
                     'validos'          => count($batchJuicioData) ?: count($aprendicesCache),
                     'aprendices'       => count($aprendicesCache),
