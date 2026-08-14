@@ -230,7 +230,7 @@ function cargarDashboard() {
     // ── Retiros por competencia — Curva de Supervivencia ──
     fetch('<?= BASE_URL ?>index.php?module=dashboard&action=retirados_competencia' + qs)
       .then(r=>r.json()).then(data=>{
-        const survival = data.survival || [];
+        const survival = Array.isArray(data) ? data : (data.survival || []);
         if(!survival.length) {
           document.querySelector('#tablaRetirosCompetencia tbody').innerHTML =
             '<tr><td colspan="6" class="empty-state">Sin datos de retiros</td></tr>';
