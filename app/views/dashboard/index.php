@@ -67,21 +67,21 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
     <div class="form-group" style="margin:0"><label style="font-weight:600;margin-bottom:6px;display:block">Documento</label>
       <div class="modern-search-wrapper">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" id="fDoc" placeholder="Ej: 1020304050">
+        <input type="text" id="fDocumento" placeholder="Ej: 1020304050">
         <div class="spinner" id="spinDoc"></div>
       </div>
     </div>
     <div class="form-group" style="margin:0"><label style="font-weight:600;margin-bottom:6px;display:block">Competencia</label>
       <div class="modern-search-wrapper">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" id="fComp" placeholder="Buscar por código o nombre...">
+        <input type="text" id="fCompetencia" placeholder="Buscar por código o nombre...">
         <div class="spinner" id="spinComp"></div>
       </div>
     </div>
     <div class="form-group" style="margin:0"><label style="font-weight:600;margin-bottom:6px;display:block">Resultado de Aprendizaje</label>
       <div class="modern-search-wrapper">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" id="fRes" placeholder="Buscar por código o nombre...">
+        <input type="text" id="fResultado" placeholder="Buscar por código o nombre...">
         <div class="spinner" id="spinRes"></div>
       </div>
     </div>
@@ -388,15 +388,7 @@ cargarDashboard();
 // ── Filtro avanzado ──
 function getHighlightRegex(term) {
   if (!term) return null;
-  return new RegExp('('+term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')+')', 'gi');
-}
-
-function removerFiltro(key) {
-  const map = { documento: 'fDoc', competencia: 'fComp', resultado: 'fRes', estado: 'fEstado', tipo_juicio: 'fTipo' };
-  const inputId = map[key] || key;
-  const el = document.getElementById(inputId);
-  if (el) el.value = '';
-  aplicarFiltro(1);
+  return new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
 }
 
 function renderActiveFilters(paramsObj) {
@@ -407,7 +399,8 @@ function renderActiveFilters(paramsObj) {
   };
   for (const [key, val] of Object.entries(paramsObj)) {
     if (val && labels[key]) {
-      chipsHtml += `<div class="filter-chip"><span>${labels[key]}<b>${escapeHtml(val)}</b></span><button type="button" title="Quitar filtro" onclick="removerFiltro('${key}')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>`;
+      const inputId = 'f' + (key==='tipo_juicio' ? 'Tipo' : key.charAt(0).toUpperCase() + key.slice(1));
+      chipsHtml += `<div class="filter-chip"><span>${labels[key]}<b>${escapeHtml(val)}</b></span><button type="button" title="Borrar filtro" onclick="document.getElementById('${inputId}').value=''; aplicarFiltro(1)"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>`;
     }
   }
   container.innerHTML = chipsHtml;
@@ -419,35 +412,28 @@ function aplicarFiltro(page = 1) {
   currentFilterPage = page;
   
   const prog = document.getElementById('filtroProgramaGlobal')?.value || '';
-  const fDoc = document.getElementById('fDoc')?.value.trim() || '';
+  const fDoc = document.getElementById('fDocumento')?.value.trim() || '';
   const fEstado = document.getElementById('fEstado')?.value || '';
-  const fComp = document.getElementById('fComp')?.value.trim() || '';
-  const fRes = document.getElementById('fRes')?.value.trim() || '';
+  const fComp = document.getElementById('fCompetencia')?.value.trim() || '';
+  const fRes = document.getElementById('fResultado')?.value.trim() || '';
   const fTipo = document.getElementById('fTipo')?.value || '';
 
-  // Si todos los campos están vacíos, mostrar mensaje inicial
   if (!prog && !fDoc && !fEstado && !fComp && !fRes && !fTipo) {
     limpiarFiltro();
     return;
   }
 
-  const paramsObj = {};
-  if (fDoc) paramsObj.documento = fDoc;
-  if (fEstado) paramsObj.estado = fEstado;
-  if (fComp) paramsObj.competencia = fComp;
-  if (fRes) paramsObj.resultado = fRes;
-  if (fTipo) paramsObj.tipo_juicio = fTipo;
-  if (prog) paramsObj.programa = prog;
-  paramsObj.page = currentFilterPage;
-
+  const paramsObj = { documento: fDoc, estado: fEstado, competencia: fComp, resultado: fRes, tipo_juicio: fTipo };
   const params = new URLSearchParams(paramsObj);
+  if (prog) params.set('programa', prog);
+  
   const exportParams = new URLSearchParams(paramsObj);
-  exportParams.delete('page');
+  if (prog) exportParams.set('programa', prog);
+  
+  params.set('page', currentFilterPage);
 
-  // Mostrar chips activos
   renderActiveFilters(paramsObj);
 
-  // Spinners
   if(fDoc && document.getElementById('spinDoc')) document.getElementById('spinDoc').style.display='block';
   if(fComp && document.getElementById('spinComp')) document.getElementById('spinComp').style.display='block';
   if(fRes && document.getElementById('spinRes')) document.getElementById('spinRes').style.display='block';
@@ -457,7 +443,7 @@ function aplicarFiltro(page = 1) {
     exportBtn.href = '<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado&format=csv&' + exportParams.toString();
   }
 
-  fetch('<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado&' + params.toString())
+  fetch('<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado&'+params.toString())
     .then(r=>r.json()).then(response=>{
       document.querySelectorAll('.modern-search-wrapper .spinner').forEach(el=>el.style.display='none');
       
@@ -523,16 +509,17 @@ function renderPagination(pag) {
 }
 
 function limpiarFiltro() {
-  document.getElementById('fDoc').value = '';
+  document.getElementById('fDocumento').value = '';
   document.getElementById('fEstado').value = '';
-  document.getElementById('fComp').value = '';
-  document.getElementById('fRes').value = '';
+  document.getElementById('fCompetencia').value = '';
+  document.getElementById('fResultado').value = '';
   document.getElementById('fTipo').value = '';
   document.getElementById('activeFilters').innerHTML = '';
   document.querySelectorAll('.modern-search-wrapper .spinner').forEach(el=>el.style.display='none');
   document.querySelector('#tablaFiltro tbody').innerHTML = '<tr><td colspan="9" class="empty-state">Use los filtros para buscar juicios</td></tr>';
   document.getElementById('paginationControls').innerHTML = '';
 }
+
 function debounce(func, wait) {
     let timeout;
     return function (...args) {
@@ -541,20 +528,14 @@ function debounce(func, wait) {
     };
 }
 
-// Debounced version of aplicarFiltro for live search (always starts at page 1)
-const aplicarFiltroDebounced = debounce(() => aplicarFiltro(1), 250);
+const aplicarFiltroDebounced = debounce(() => aplicarFiltro(1), 300);
 
-// Attach live-search listeners to the inputs on input, keyup, change and paste
-['fDoc', 'fComp', 'fRes'].forEach(id => {
+['fDocumento', 'fCompetencia', 'fResultado'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
         el.addEventListener('input', aplicarFiltroDebounced);
-        el.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') aplicarFiltro(1);
-            else aplicarFiltroDebounced();
-        });
+        el.addEventListener('keyup', aplicarFiltroDebounced);
         el.addEventListener('change', aplicarFiltroDebounced);
-        el.addEventListener('paste', () => setTimeout(() => aplicarFiltro(1), 50));
     }
 });
 </script>
