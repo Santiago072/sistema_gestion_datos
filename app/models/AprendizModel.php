@@ -14,8 +14,12 @@ class AprendizModel extends BaseModel {
         $params     = [];
         
         if ($documento !== '') {
-            $conditions[] = "a.documento LIKE :doc";
-            $params[':doc'] = '%' . $documento . '%';
+            $conditions[] = "(a.documento LIKE :doc OR CONCAT(a.nombres, ' ', a.apellidos) LIKE :full OR a.nombres LIKE :nom OR a.apellidos LIKE :ape)";
+            $val = '%' . $documento . '%';
+            $params[':doc']  = $val;
+            $params[':full'] = $val;
+            $params[':nom']  = $val;
+            $params[':ape']  = $val;
         }
         if ($id_ficha !== '') {
             $conditions[] = "a.id_ficha = :ficha";

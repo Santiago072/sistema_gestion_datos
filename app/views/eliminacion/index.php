@@ -108,10 +108,10 @@ $programas = $db->query("
     </div>
 
     <div class="form-group" style="margin:0;">
-      <label style="font-weight:600;margin-bottom:6px;display:block;color:var(--text);font-size:.9rem;">Número de documento</label>
+      <label style="font-weight:600;margin-bottom:6px;display:block;color:var(--text);font-size:.9rem;">Número de documento o nombre</label>
       <div class="modern-search-wrapper">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" id="buscarDoc" placeholder="Ej: 1075789456" oninput="buscarAprendiz()">
+        <input type="text" id="buscarDoc" placeholder="Buscar por documento o nombre..." oninput="buscarAprendiz()">
         <div class="spinner" id="spinDocSearch"></div>
       </div>
     </div>

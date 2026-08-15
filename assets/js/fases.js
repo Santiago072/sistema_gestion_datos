@@ -75,17 +75,19 @@ let proyectosData = [];
 function cargarProyectos(){
   fetch(`${API}&subaction=list_proyectos`).then(r=>r.json()).then(d=>{
     proyectosData = d || [];
-    const idFicha = getProgramaId();
-    if(idFicha) {
-      seleccionarProyecto(idFicha);
-    } else if(proyectosData.length > 0) {
+    let idFicha = getProgramaId();
+    if(!idFicha && proyectosData.length > 0) {
       // Auto-seleccionar el primer proyecto disponible para mostrar contenido de inmediato
-      const firstId = proyectosData[0].id_ficha;
+      idFicha = proyectosData[0].id_ficha;
       const select = document.getElementById('globalPrograma');
       if(select) {
-        select.value = firstId;
+        select.value = idFicha;
       }
-      seleccionarProyecto(firstId);
+    }
+    
+    if(idFicha) {
+      seleccionarProyecto(idFicha);
+      cargarFases();
     } else {
       mostrarMensajeVacio("Selecciona un programa de formación en la parte superior para ver su proyecto formativo.");
     }
@@ -266,16 +268,26 @@ function eliminarProyecto(id_ficha){
 function cargarFases() {
   const idFicha = getProgramaId();
   const url = `${API}&subaction=list_fases` + (idFicha ? `&id_ficha=${idFicha}` : '');
-  document.getElementById('listaFases').innerHTML = '<div class="loading"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div>';
+  const listaFases = document.getElementById('listaFases');
+  if(listaFases) {
+    listaFases.innerHTML = '<div class="loading"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></div>';
+  }
 
   fetch(url)
     .then(r => r.json())
     .then(fases => {
-      allFases = fases;
-      renderFases(fases, '');
+      allFases = fases || [];
+      renderFases(allFases, '');
+      if(allFases.length > 0) {
+        // Auto-seleccionar la primera fase para que las actividades aparezcan de inmediato
+        const targetFase = allFases.find(f => f.id_fase == currentFaseId) || allFases[0];
+        seleccionarFase(targetFase.id_fase, targetFase.nombre_fase);
+      }
     })
     .catch(() => {
-      document.getElementById('listaFases').innerHTML = '<div class="empty-state"><p>Error al cargar fases. Revisa la conexión.</p></div>';
+      if(listaFases) {
+        listaFases.innerHTML = '<div class="empty-state"><p>Error al cargar fases. Revisa la conexión.</p></div>';
+      }
     });
 }
 
@@ -517,12 +529,27 @@ function eliminarActividad(id, nombre) {
     .then(() => cargarActividades(currentFaseId));
 }
 
-/* ── Sincronizar selectores ── */
+/* ── Sincronizar selectores y pestañas ── */
 document.addEventListener('DOMContentLoaded', () => {
   const pdfSel    = document.getElementById('pdfPrograma');
   const globalSel = document.getElementById('globalPrograma');
   if (pdfSel && globalSel) {
-    pdfSel.addEventListener('change', () => { globalSel.value = pdfSel.value; });
+    pdfSel.addEventListener('change', () => { 
+      globalSel.value = pdfSel.value; 
+      onProgramaChange(); 
+    });
+  }
+
+  // Al cambiar al tab de Fases y Actividades, asegurar que se carguen las actividades
+  const tabBtnFases = document.getElementById('tabBtnFases');
+  if (tabBtnFases) {
+    tabBtnFases.addEventListener('click', () => {
+      if (!allFases.length) {
+        cargarFases();
+      } else if (!currentFaseId && allFases.length > 0) {
+        seleccionarFase(allFases[0].id_fase, allFases[0].nombre_fase);
+      }
+    });
   }
 });
 
@@ -535,5 +562,3 @@ document.addEventListener('keydown', e => {
 
 /* ── Init ── */
 cargarProyectos();
-cargarFases();
-onProgramaChange();

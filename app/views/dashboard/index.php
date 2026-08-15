@@ -67,21 +67,21 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
     <div class="form-group" style="margin:0"><label style="font-weight:600;margin-bottom:6px;display:block">Documento</label>
       <div class="modern-search-wrapper">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" id="fDocumento" placeholder="Ej: 1020304050">
+        <input type="text" id="fDoc" placeholder="Ej: 1020304050">
         <div class="spinner" id="spinDoc"></div>
       </div>
     </div>
     <div class="form-group" style="margin:0"><label style="font-weight:600;margin-bottom:6px;display:block">Competencia</label>
       <div class="modern-search-wrapper">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" id="fCompetencia" placeholder="Buscar por código o nombre...">
+        <input type="text" id="fComp" placeholder="Buscar por código o nombre...">
         <div class="spinner" id="spinComp"></div>
       </div>
     </div>
     <div class="form-group" style="margin:0"><label style="font-weight:600;margin-bottom:6px;display:block">Resultado de Aprendizaje</label>
       <div class="modern-search-wrapper">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" id="fResultado" placeholder="Buscar por código o nombre...">
+        <input type="text" id="fRes" placeholder="Buscar por código o nombre...">
         <div class="spinner" id="spinRes"></div>
       </div>
     </div>
@@ -122,8 +122,8 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
   </div>
   <div class="chart-box chart-box-tall mb-16"><canvas id="chartRetirosCompetencia"></canvas></div>
   <div class="table-wrap"><table id="tablaRetirosCompetencia" class="table-compact">
-    <thead><tr><th>Programa</th><th>Competencia (Punto de Salida)</th><th>Fase (SENA)</th><th>Retirados</th><th>Aprendices Retirados</th><th>Funcionario</th></tr></thead>
-    <tbody><tr><td colspan="6" class="empty-state">Cargando datos…</td></tr></tbody>
+    <thead><tr><th>Programa</th><th>Competencia (Punto de Salida)</th><th>Fase (SENA)</th><th>Fecha Salida</th><th>Retirados</th><th>Aprendices Retirados</th><th>Funcionario</th></tr></thead>
+    <tbody><tr><td colspan="7" class="empty-state">Cargando datos…</td></tr></tbody>
   </table></div>
 </div>
 
@@ -137,6 +137,10 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
 </div>
 
 <script>
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
 const COLORS = { green:'#39A900', orange:'#FF6D00', red:'#EF4444', blue:'#3B82F6', cyan:'#00BCD4', yellow:'#F59E0B', purple:'#8B5CF6' };
 let chartFormacion, chartComparativa, chartRetirosComp;
 
@@ -233,7 +237,7 @@ function cargarDashboard() {
         const survival = Array.isArray(data) ? data : (data.survival || []);
         if(!survival.length) {
           document.querySelector('#tablaRetirosCompetencia tbody').innerHTML =
-            '<tr><td colspan="6" class="empty-state">Sin datos de retiros</td></tr>';
+            '<tr><td colspan="7" class="empty-state">Sin datos de retiros</td></tr>';
           return;
         }
 
@@ -256,7 +260,7 @@ function cargarDashboard() {
             borderColor: lineColors[pi % lineColors.length],
             backgroundColor: lineColors[pi % lineColors.length] + '18',
             fill: true,
-            stepped: 'after',
+            stepped: 'before',
             pointRadius: 4,
             pointHoverRadius: 7,
             borderWidth: 2.5,
@@ -302,18 +306,25 @@ function cargarDashboard() {
                 caretPadding: 15,
                 callbacks:{
                   title: function(items){
-                    const idx = items[0].dataIndex;
-                    for(const prog of progNames){
-                      const pt = survivalMeta[prog]?.[idx];
-                      if(pt) {
-                        const compText = pt.competencia?.substring(0,80) || 'C'+(idx+1);
-                        return pt.fase ? `[${pt.fase.toUpperCase()}] ${compText}` : compText;
-                      }
+                    if(!items || !items.length) return '';
+                    const item = items[0];
+                    const prog = item.dataset.label;
+                    const idx = item.dataIndex;
+                    const pt = survivalMeta[prog]?.[idx];
+                    if(pt && pt.competencia) {
+                      const compText = pt.competencia.length > 70 ? pt.competencia.substring(0,70) + '…' : pt.competencia;
+                      return (pt.fase && pt.fase !== 'N/A' ? `[${pt.fase.toUpperCase()}] ` : '') + compText;
                     }
                     return 'C'+(idx+1);
                   },
                   label: function(item){
-                    return item.dataset.label + ': ' + (item.raw ?? '—') + ' aprendices';
+                    const prog = item.dataset.label;
+                    const pt = survivalMeta[prog]?.[item.dataIndex];
+                    let info = item.dataset.label + ': ' + (item.raw ?? '—') + ' aprendices activos';
+                    if (pt && pt.fecha) {
+                      info += ` (Eval: ${pt.fecha})`;
+                    }
+                    return info;
                   },
                   afterBody: function(items){
                     const idx = items[0].dataIndex;
@@ -321,9 +332,14 @@ function cargarDashboard() {
                     items.forEach(item => {
                       const prog = progNames[item.datasetIndex];
                       const pt = survivalMeta[prog]?.[idx];
-                      if(!pt || !pt.retirados || !pt.retirados.length) return;
-                      const nombres = pt.retirados.map(r => r.nombre + (r.estado === 'Trasladado' ? ' (Trasladado)' : ''));
-                      txt += '\n🚪 Salieron: ' + nombres.join(', ');
+                      if(!pt) return;
+                      if(pt.retirados && pt.retirados.length) {
+                        const nombres = pt.retirados.map(r => {
+                          const fSal = r.fecha_salida ? ` [Salida: ${r.fecha_salida}]` : '';
+                          return r.nombre + (r.estado === 'Trasladado' ? ' (Trasladado)' : '') + fSal;
+                        });
+                        txt += '\n🚪 Salieron: ' + nombres.join(', ');
+                      }
                       const funcs = (pt.funcionarios||[]).filter(f=>f&&f!=='Sin asignar');
                       if(funcs.length) txt += '\n👨‍🏫 Funcionario: ' + funcs.join(', ');
                     });
@@ -347,16 +363,18 @@ function cargarDashboard() {
             if(!pt.retirados || !pt.retirados.length) return;
             const aprs = pt.retirados.map(a => {
               const color = a.estado === 'Trasladado' ? 'badge-cyan' : 'badge-red';
-              return `<span class="badge ${color}" style="font-size:.7rem;margin:1px">${a.nombre} (${a.estado})</span>`;
+              return `<span class="badge ${color}" style="font-size:.7rem;margin:1px">${escapeHtml(a.nombre)} (${a.estado})</span>`;
             }).join(' ');
             const funcs = (pt.funcionarios||[]).map(f => {
               if(f==='Sin asignar') return '<span class="badge badge-gray">Sin asignar</span>';
-              return '<span class="badge badge-blue">'+f+'</span>';
+              return '<span class="badge badge-blue">'+escapeHtml(f)+'</span>';
             }).join(' ');
+            const fechaSalida = pt.fecha_salida || pt.fecha || '—';
             tableRows.push(`<tr>
-              <td class="text-muted" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.programa}">${s.programa}</td>
-              <td class="text-muted col-long" title="${pt.competencia}">${pt.competencia.substring(0,50)}${pt.competencia.length>50?'…':''}</td>
-              <td><span class="badge" style="background:rgba(139,92,246,0.15);color:#C4B5FD">${pt.fase || 'N/A'}</span></td>
+              <td class="text-muted" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(s.programa)}">${escapeHtml(s.programa)}</td>
+              <td class="text-muted col-long" title="${escapeHtml(pt.competencia)}">${escapeHtml(pt.competencia.substring(0,45))}${pt.competencia.length>45?'…':''}</td>
+              <td><span class="badge" style="background:rgba(139,92,246,0.15);color:#C4B5FD">${escapeHtml(pt.fase || 'N/A')}</span></td>
+              <td class="text-muted" style="white-space:nowrap;font-size:0.8rem">${escapeHtml(fechaSalida)}</td>
               <td><span class="badge badge-red">${pt.retirados.length}</span></td>
               <td>${aprs}</td>
               <td>${funcs}</td>
@@ -364,7 +382,7 @@ function cargarDashboard() {
           });
         });
         tb.innerHTML = tableRows.length ? tableRows.join('') :
-          '<tr><td colspan="6" class="empty-state">Sin retiros registrados</td></tr>';
+          '<tr><td colspan="7" class="empty-state">Sin retiros registrados</td></tr>';
       });
 
 
@@ -388,7 +406,18 @@ cargarDashboard();
 // ── Filtro avanzado ──
 function getHighlightRegex(term) {
   if (!term) return null;
-  return new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+  return new RegExp('('+term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')+')', 'gi');
+}
+
+
+function limpiarCampo(key) {
+  const map = { documento: 'fDoc', competencia: 'fComp', resultado: 'fRes', estado: 'fEstado', tipo_juicio: 'fTipo' };
+  const inputId = map[key];
+  if (inputId) {
+    const el = document.getElementById(inputId);
+    if (el) el.value = '';
+  }
+  aplicarFiltro(1);
 }
 
 function renderActiveFilters(paramsObj) {
@@ -399,8 +428,7 @@ function renderActiveFilters(paramsObj) {
   };
   for (const [key, val] of Object.entries(paramsObj)) {
     if (val && labels[key]) {
-      const inputId = 'f' + (key==='tipo_juicio' ? 'Tipo' : key.charAt(0).toUpperCase() + key.slice(1));
-      chipsHtml += `<div class="filter-chip"><span>${labels[key]}<b>${escapeHtml(val)}</b></span><button type="button" title="Borrar filtro" onclick="document.getElementById('${inputId}').value=''; aplicarFiltro(1)"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>`;
+      chipsHtml += `<div class="filter-chip"><span>${labels[key]}<b>${val}</b></span><button type="button" onclick="limpiarCampo('${key}')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>`;
     }
   }
   container.innerHTML = chipsHtml;
@@ -411,13 +439,14 @@ let currentFilterPage = 1;
 function aplicarFiltro(page = 1) {
   currentFilterPage = page;
   
-  const prog = document.getElementById('filtroProgramaGlobal')?.value || '';
-  const fDoc = document.getElementById('fDocumento')?.value.trim() || '';
-  const fEstado = document.getElementById('fEstado')?.value || '';
-  const fComp = document.getElementById('fCompetencia')?.value.trim() || '';
-  const fRes = document.getElementById('fResultado')?.value.trim() || '';
-  const fTipo = document.getElementById('fTipo')?.value || '';
+  const prog = document.getElementById('filtroProgramaGlobal').value;
+  const fDoc = document.getElementById('fDoc').value.trim();
+  const fEstado = document.getElementById('fEstado').value;
+  const fComp = document.getElementById('fComp').value.trim();
+  const fRes = document.getElementById('fRes').value.trim();
+  const fTipo = document.getElementById('fTipo').value;
 
+  // Si todos los campos están vacíos, no hacemos una búsqueda masiva.
   if (!prog && !fDoc && !fEstado && !fComp && !fRes && !fTipo) {
     limpiarFiltro();
     return;
@@ -432,18 +461,20 @@ function aplicarFiltro(page = 1) {
   
   params.set('page', currentFilterPage);
 
+  // Show chips
   renderActiveFilters(paramsObj);
 
-  if(fDoc && document.getElementById('spinDoc')) document.getElementById('spinDoc').style.display='block';
-  if(fComp && document.getElementById('spinComp')) document.getElementById('spinComp').style.display='block';
-  if(fRes && document.getElementById('spinRes')) document.getElementById('spinRes').style.display='block';
+  // Spinners
+  if(fDoc) document.getElementById('spinDoc').style.display='block';
+  if(fComp) document.getElementById('spinComp').style.display='block';
+  if(fRes) document.getElementById('spinRes').style.display='block';
 
   const exportBtn = document.getElementById('btnExportarCSV');
   if (exportBtn) {
-    exportBtn.href = '<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado&format=csv&' + exportParams.toString();
+    exportBtn.href = '<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado?format=csv&' + exportParams.toString();
   }
 
-  fetch('<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado&'+params.toString())
+  fetch('<?= BASE_URL ?>index.php?module=dashboard&action=filtro_avanzado&'+params)
     .then(r=>r.json()).then(response=>{
       document.querySelectorAll('.modern-search-wrapper .spinner').forEach(el=>el.style.display='none');
       
@@ -467,11 +498,15 @@ function aplicarFiltro(page = 1) {
         if (rxRes) resHTML = resHTML.replace(rxRes, '<span class="highlight">$1</span>');
 
         return `<tr class="row-animate" style="animation-delay:${i*20}ms">
-        <td>${x.documento}</td><td><strong>${x.nombre_completo}</strong></td>
-        <td>${badgeEstado(x.estado)}</td><td class="text-muted" style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${x.programa}">${x.programa}</td>
-        <td class="text-muted col-long">${compHTML}</td><td class="text-muted col-long">${resHTML}</td>
-        <td>${badgeJuicio(x.tipo_juicio)}</td><td class="text-muted">${x.fecha_juicio}</td>
-        <td class="text-muted">${x.funcionario_registro}</td>
+        <td title="${x.documento}">${x.documento}</td>
+        <td title="${x.nombre_completo}"><strong>${x.nombre_completo}</strong></td>
+        <td>${badgeEstado(x.estado)}</td>
+        <td class="text-muted" style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${x.programa}">${x.programa}</td>
+        <td class="text-muted col-long" title="${x.competencia.replace(/"/g, '&quot;')}">${compHTML}</td>
+        <td class="text-muted col-long" title="${x.resultado_aprendizaje.replace(/"/g, '&quot;')}">${resHTML}</td>
+        <td>${badgeJuicio(x.tipo_juicio)}</td>
+        <td class="text-muted">${x.fecha_juicio}</td>
+        <td class="text-muted" title="${x.funcionario_registro}">${x.funcionario_registro}</td>
       </tr>`}).join('');
       
       renderPagination(pag);
@@ -509,17 +544,16 @@ function renderPagination(pag) {
 }
 
 function limpiarFiltro() {
-  document.getElementById('fDocumento').value = '';
+  document.getElementById('fDoc').value = '';
   document.getElementById('fEstado').value = '';
-  document.getElementById('fCompetencia').value = '';
-  document.getElementById('fResultado').value = '';
+  document.getElementById('fComp').value = '';
+  document.getElementById('fRes').value = '';
   document.getElementById('fTipo').value = '';
   document.getElementById('activeFilters').innerHTML = '';
   document.querySelectorAll('.modern-search-wrapper .spinner').forEach(el=>el.style.display='none');
   document.querySelector('#tablaFiltro tbody').innerHTML = '<tr><td colspan="9" class="empty-state">Use los filtros para buscar juicios</td></tr>';
   document.getElementById('paginationControls').innerHTML = '';
 }
-
 function debounce(func, wait) {
     let timeout;
     return function (...args) {
@@ -528,14 +562,14 @@ function debounce(func, wait) {
     };
 }
 
+// Debounced version of aplicarFiltro for live search (always starts at page 1)
 const aplicarFiltroDebounced = debounce(() => aplicarFiltro(1), 300);
 
-['fDocumento', 'fCompetencia', 'fResultado'].forEach(id => {
+// Attach live-search listeners to the three inputs
+['fDoc', 'fComp', 'fRes'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-        el.addEventListener('input', aplicarFiltroDebounced);
         el.addEventListener('keyup', aplicarFiltroDebounced);
-        el.addEventListener('change', aplicarFiltroDebounced);
     }
 });
 </script>

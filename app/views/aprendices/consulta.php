@@ -18,9 +18,9 @@ $programas = $db->query("SELECT id_ficha, CONCAT(nombre, ' (', id_ficha, ')') AS
     <span id="searchCount" style="font-size:.8rem;color:var(--text-muted)"></span>
   </div>
   <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
-    <div style="flex:0 0 280px">
+    <div style="flex:0 0 380px;min-width:300px">
       <label style="margin-bottom:6px;display:block">Filtrar por Programa</label>
-      <select id="filtroPrograma" style="width:100%;padding:12px 14px;font-size:.9rem">
+      <select id="filtroPrograma" style="width:100%;padding:12px 14px;font-size:.9rem;text-overflow:ellipsis;white-space:nowrap;overflow:hidden">
         <option value="">Todos los programas</option>
         <?php foreach($programas as $p): ?>
           <option value="<?= htmlspecialchars($p['id_ficha']) ?>"><?= htmlspecialchars($p['nombre']) ?></option>
@@ -150,6 +150,7 @@ input.addEventListener('input', doSearch);
 
 btnLimpiar.addEventListener('click', () => {
   input.value = '';
+  filtroPrograma.value = '';
   btnLimpiar.style.display = 'none';
   acList.classList.remove('open');
   searchCount.textContent = '';
