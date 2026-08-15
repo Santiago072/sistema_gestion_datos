@@ -1,0 +1,69 @@
+/* ==========================================================================
+   ESTILOS BASE, RESET Y UTILIDADES GLOBALES
+   ========================================================================== */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-width: 320px;
+  overflow-x: hidden;
+  transition: background-color 0.3s, color 0.3s;
+  line-height: 1.5;
+}
+
+/* Tipografías y Helpers */
+.text-muted    { color: var(--text-muted) !important; }
+.text-primary  { color: var(--primary) !important; }
+.text-danger   { color: var(--danger) !important; }
+.text-right    { text-align: right; }
+.text-center   { text-align: center; }
+.font-bold     { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.truncate      { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.divider       { border: none; border-top: 1px solid var(--divider); margin: 16px 0; }
+.tag           { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: .71rem; font-weight: 600; background: var(--bg3); color: var(--text-muted); }
+
+/* Espaciados */
+.mb-8  { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+.mb-32 { margin-bottom: 32px; }
+.mt-8  { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.p-8   { padding: 8px; }
+.p-16  { padding: 16px; }
+.p-24  { padding: 24px; }
+.gap-8  { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.flex          { display: flex; }
+.flex-center   { display: flex; align-items: center; }
+.flex-between  { display: flex; align-items: center; justify-content: space-between; }
+.flex-wrap     { flex-wrap: wrap; }
+
+/* Animaciones */
+@keyframes fadeIn      { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin        { to { transform: rotate(360deg); } }
+@keyframes pulse       { 0%, 100% { box-shadow: 0 0 0 0 var(--primary-glow); } 50% { box-shadow: 0 0 0 8px transparent; } }
+@keyframes shimmer     { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+.fade-in    { animation: fadeIn .35s ease both; }
+.stagger-1  { animation-delay: .04s; }
+.stagger-2  { animation-delay: .08s; }
+.stagger-3  { animation-delay: .13s; }
+.stagger-4  { animation-delay: .18s; }
+.stagger-5  { animation-delay: .23s; }
+.stagger-6  { animation-delay: .28s; }
+.stagger-7  { animation-delay: .34s; }
+.stagger-8  { animation-delay: .4s; }
+
+.skeleton   { background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 50%, var(--bg2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
+.loading    { display: flex; align-items: center; justify-content: center; padding: 48px; color: var(--text-muted); gap: 10px; }
+.loading svg { animation: spin 1s linear infinite; width: 24px; height: 24px; color: var(--primary); }
+.empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+.empty-state svg { width: 44px; height: 44px; color: var(--text-dim); margin-bottom: 12px; }
+.empty-state p { font-size: .875rem; line-height: 1.6; }

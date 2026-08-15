@@ -1,0 +1,86 @@
+/* ==========================================================================
+   FASES FORMATIVAS, PROYECTOS Y LÍNEA DE TIEMPO
+   ========================================================================== */
+
+/* Tabs */
+.tabs      { display: flex; gap: 2px; border-bottom: 2px solid var(--divider); margin-bottom: 22px; flex-wrap: wrap; }
+.tab-btn   { padding: 10px 20px; background: none; border: none; color: var(--text-muted); font-size: .845rem; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color .2s, border-color .2s; border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+.tab-btn:hover  { color: var(--text); background: var(--bg2); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.tab-pane       { display: none; }
+.tab-pane.active { display: block; animation: fadeIn .3s ease; }
+
+/* Timeline de Fases */
+.fase-timeline-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; position: relative; }
+.fase-card {
+  background: var(--bg2); border: 1px solid var(--card-border);
+  border-radius: var(--radius); padding: 20px; position: relative;
+  transition: transform .2s, box-shadow .2s; cursor: default;
+}
+.fase-card:hover        { transform: translateY(-4px); box-shadow: var(--shadow); }
+.fase-card.done         { border-color: rgba(57,217,0,.35);  background: rgba(57,217,0,.05); }
+.fase-card.mid          { border-color: rgba(255,184,0,.35); background: rgba(255,184,0,.04); }
+.fase-card.low          { border-color: rgba(255,109,0,.3);  background: rgba(255,109,0,.04); }
+.fase-card.empty        { opacity: .65; }
+.fase-num               { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 800; margin: 0 auto 12px; }
+.fase-card.done  .fase-num { background: rgba(57,217,0,.2);  color: var(--primary); }
+.fase-card.mid   .fase-num { background: rgba(255,184,0,.2); color: var(--warning); }
+.fase-card.low   .fase-num { background: rgba(255,109,0,.2); color: var(--accent); }
+.fase-card.empty .fase-num { background: var(--bg3); color: var(--text-dim); }
+.fase-nombre            { font-weight: 700; font-size: .9rem; text-align: center; margin-bottom: 14px; }
+.fase-progress-wrap     { background: rgba(0,0,0,.2); border-radius: 10px; height: 9px; margin-bottom: 10px; overflow: hidden; }
+.fase-progress-bar      { height: 100%; border-radius: 10px; transition: width 1s ease; }
+.fase-pct               { font-size: 1.4rem; font-weight: 800; text-align: center; margin-bottom: 4px; }
+.fase-card.done  .fase-pct { color: var(--primary); }
+.fase-card.mid   .fase-pct { color: var(--warning); }
+.fase-card.low   .fase-pct { color: var(--accent); }
+.fase-card.empty .fase-pct { color: var(--text-dim); }
+.fase-stats     { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.fase-stat      { background: rgba(0,0,0,.18); border-radius: var(--radius-sm); padding: 8px; text-align: center; }
+.fase-stat-val  { font-size: .95rem; font-weight: 700; }
+.fase-stat-lbl  { font-size: .67rem; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+.fase-detail-row { display: flex; justify-content: space-between; font-size: .77rem; color: var(--text-muted); margin-top: 10px; border-top: 1px solid var(--divider); padding-top: 8px; }
+.fase-legend     { display: flex; gap: 14px; margin-bottom: 16px; font-size: .8rem; color: var(--text-muted); flex-wrap: wrap; }
+.legend-dot      { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+
+/* Gestión de Fases y Actividades */
+.fase-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--bg2); border: 1px solid var(--card-border);
+  margin-bottom: 8px; cursor: pointer;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.fase-item:hover       { border-color: var(--primary); background: var(--primary-subtle); box-shadow: 0 0 0 1px var(--primary-glow); }
+.fase-item.selected    { border-color: var(--primary); background: var(--primary-subtle); }
+.fase-order-badge {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--primary-subtle); color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .78rem; flex-shrink: 0; border: 1px solid rgba(57,217,0,.3);
+}
+.fase-info           { flex: 1; min-width: 0; }
+.fase-info strong    { display: block; font-size: .875rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fase-info small     { font-size: .75rem; color: var(--text-muted); display: block; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fase-actions        { display: flex; gap: 4px; flex-shrink: 0; opacity: 0; transition: opacity .2s; }
+.fase-item:hover .fase-actions { opacity: 1; }
+
+.act-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 14px; border-top: 1px solid var(--divider);
+  transition: background .15s;
+}
+.act-item:hover { background: var(--bg2); }
+.act-item .act-info { flex: 1; min-width: 0; }
+.act-item .act-info strong { display: block; font-size: .845rem; font-weight: 600; }
+.act-item .act-info small  { font-size: .75rem; color: var(--text-muted); margin-top: 2px; display: block; }
+.act-item .act-del  { flex-shrink: 0; opacity: 0; transition: opacity .2s; }
+.act-item:hover .act-del { opacity: 1; }
+
+.empty-panel {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 48px 24px; color: var(--text-dim); text-align: center; gap: 10px;
+}
+.empty-panel svg   { width: 42px; height: 42px; opacity: .4; }
+.empty-panel p     { font-size: .875rem; line-height: 1.5; }
+.list-count { font-size: .72rem; color: var(--text-dim); background: var(--bg3); border-radius: 10px; padding: 2px 8px; font-weight: 600; }

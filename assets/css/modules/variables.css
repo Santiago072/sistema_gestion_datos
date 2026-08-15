@@ -1,0 +1,93 @@
+/* ==========================================================================
+   VARIABLES Y TOKENS DE DISEÑO
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Colores primarios */
+  --primary:        #39d900;
+  --primary-dark:   #2aaf00;
+  --primary-light:  #56ff12;
+  --primary-glow:   rgba(57, 217, 0, 0.28);
+  --primary-subtle: rgba(57, 217, 0, 0.08);
+
+  /* Colores de acento */
+  --secondary:  #00d4ff;
+  --accent:     #FF6D00;
+  --danger:     #ff3d57;
+  --warning:    #ffb800;
+  --info:       #00c8ff;
+  --success:    #39d900;
+
+  /* Superficies */
+  --bg:          #0c0f17;
+  --bg2:         #141926;
+  --bg3:         #1e2738;
+  --bg4:         #253044;
+  --card:        #141926;
+  --card-hover:  #1a2236;
+  --card-border: rgba(57, 217, 0, 0.12);
+  --divider:     rgba(255, 255, 255, 0.06);
+
+  /* Texto */
+  --text:       #f1f5f9;
+  --text-muted: #8fa3bf;
+  --text-dim:   #526070;
+  --text-light: #ffffff;
+
+  /* Layout */
+  --sidebar-w:     260px;
+  --sidebar-w-sm:  68px;   /* rail colapsado: solo iconos */
+  --topbar-h:      64px;
+
+  /* Radios */
+  --radius-xs:  6px;
+  --radius-sm:  8px;
+  --radius:     12px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+
+  /* Sombras */
+  --shadow-sm:  0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow:     0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-lg:  0 16px 48px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 8px 24px var(--primary-glow);
+
+  /* Transición */
+  --transition: all 0.2s ease;
+}
+
+/* Modo claro */
+[data-theme="light"] {
+  --primary:        #2d9400;
+  --primary-dark:   #1f6b00;
+  --primary-light:  #3cb800;
+  --primary-glow:   rgba(45, 148, 0, 0.2);
+  --primary-subtle: rgba(45, 148, 0, 0.06);
+
+  --secondary:  #007eb5;
+  --accent:     #e05500;
+  --danger:     #d4001a;
+  --warning:    #d4790a;
+  --info:       #0077b5;
+  --success:    #2d9400;
+
+  --bg:          #f3f8f0;
+  --bg2:         #e8f5e0;
+  --bg3:         #ddf0d0;
+  --bg4:         #cde8bc;
+  --card:        #ffffff;
+  --card-hover:  #fafff7;
+  --card-border: rgba(45, 148, 0, 0.18);
+  --divider:     rgba(0, 0, 0, 0.07);
+
+  --text:       #0d1a08;
+  --text-muted: #4a6340;
+  --text-dim:   #7a9e6a;
+  --text-light: #000000;
+
+  --shadow-sm:  0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow:     0 8px 24px rgba(0, 0, 0, 0.09);
+  --shadow-lg:  0 16px 48px rgba(0, 0, 0, 0.12);
+}

@@ -1,0 +1,199 @@
+/* ==========================================================================
+   RESPONSIVE Y MEDIA QUERIES
+   ========================================================================== */
+
+img, svg, video, canvas, iframe, table {
+  max-width: 100%;
+}
+
+/* ── 2XL: pantallas anchas (≥ 1400px) ─────────────────────────────────────── */
+@media (min-width: 1400px) {
+  .main-content { padding: 32px 40px; }
+  .kpi-grid     { grid-template-columns: repeat(6, 1fr); }
+  .grid-3       { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── LG+: sidebar en modo RAIL (1101–1399px) ──────────────────────────────── */
+@media (max-width: 1399px) and (min-width: 1101px) {
+  .kpi-grid          { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-2            { grid-template-columns: 1fr 1fr; gap: 18px; }
+  .grid-3            { grid-template-columns: 1fr 1fr; gap: 18px; }
+  .grid-1-2          { grid-template-columns: 1fr 1.8fr; gap: 18px; }
+  .grid-1-3          { grid-template-columns: 1fr 2.5fr; gap: 18px; }
+  .fase-timeline-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .chart-box          { height: 290px; }
+  .topbar h1          { font-size: 1.3rem; }
+}
+
+/* ── LG: sidebar RAIL activo (781–1100px) ──────────────────────────────────── */
+@media (max-width: 1100px) and (min-width: 781px) {
+  .kpi-grid          { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .grid-2            { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3            { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-1-2, .grid-1-3 { grid-template-columns: 1fr; gap: 14px; }
+  .chart-box          { height: 260px; }
+  .chart-box-tall     { height: 360px; }
+  .topbar h1          { font-size: 1.2rem; }
+  .topbar-badge       { display: none; }
+  .main-content       { padding: 20px 20px; }
+}
+
+/* ── MD: tablet / móvil (≤ 780px) — sidebar oculto, hamburger visible ─────── */
+@media (max-width: 780px) {
+  .main-content {
+    margin-left: 0 !important;
+    padding: 56px 14px 90px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .topbar        { margin-bottom: 16px; padding-left: 48px; }
+  .topbar h1     { font-size: 1.1rem; }
+  .topbar-badge  { display: none; }
+
+  .grid-2, .grid-3, .grid-1-2, .grid-1-3 { grid-template-columns: 1fr; gap: 14px; }
+
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi-card { min-height: 100px; padding: 16px; }
+  .kpi-value { font-size: 1.6rem; }
+
+  .fase-timeline-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card { padding: 16px; border-radius: var(--radius-sm); }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table       { min-width: 480px; }
+
+  .prog-bar           { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 14px; }
+  .prog-bar select    { max-width: 100%; }
+  .prog-bar .prog-hint { display: none; }
+
+  .filter-bar { flex-direction: column; gap: 10px; padding: 12px; }
+  .filter-bar .form-group { min-width: 100%; }
+
+  .tabs    { gap: 0; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .tab-btn { flex-shrink: 0; padding: 9px 14px; font-size: .8rem; }
+
+  .section-header { flex-wrap: wrap; gap: 10px; }
+  .section-title  { font-size: .9rem; }
+
+  .modal        { padding: 20px; border-radius: var(--radius); width: 94%; max-height: 94vh; }
+  .modal-footer { flex-direction: column-reverse; }
+  .modal-footer .btn { width: 100%; justify-content: center; }
+
+  .chart-box      { height: 240px; padding: 8px; }
+  .chart-box-tall { height: 320px; }
+  .donut-wrap     { width: 180px !important; height: 180px !important; }
+  .donut-center span { font-size: 1.3rem; }
+
+  .btn    { padding: 8px 14px; font-size: .82rem; }
+  .btn-sm { padding: 6px 11px; font-size: .75rem; }
+
+  #pdfPreview .table-wrap table { min-width: 560px; }
+  #accordionFases .table-wrap table { min-width: 520px; }
+  .search-clear { right: 8px; }
+}
+
+/* ── SM: móviles grandes (≤ 639px) ────────────────────────────────────────── */
+@media (max-width: 639px) {
+  .main-content { padding: 10px 10px 80px; }
+
+  .topbar       { gap: 10px; margin-bottom: 14px; }
+  .topbar h1    { font-size: 1rem; }
+  .topbar-right { gap: 6px; }
+
+  .kpi-grid  { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi-card  { padding: 14px; min-height: 90px; border-radius: var(--radius-sm); }
+  .kpi-value { font-size: 1.4rem; }
+  .kpi-label { font-size: .72rem; }
+  .kpi-icon  { width: 36px; height: 36px; margin-bottom: 10px; }
+  .kpi-icon svg { width: 17px; height: 17px; }
+
+  .fase-timeline-grid { grid-template-columns: 1fr; }
+  .card { padding: 14px; }
+  .fase-item  { padding: 10px 12px; }
+  .fase-info strong { font-size: .82rem; }
+  .tab-btn { padding: 8px 12px; font-size: .77rem; }
+  .filter-bar { gap: 8px; }
+  .section-header { align-items: flex-start; }
+
+  .modal { width: 98%; padding: 16px; max-height: 96vh; }
+  .modal-header h3 { font-size: .97rem; }
+
+  .chart-box { height: 210px; }
+  .donut-wrap { width: 150px !important; height: 150px !important; }
+
+  #pdfPreview [style*="grid-template-columns:repeat(5"] {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .fase-legend { flex-direction: column; gap: 6px; }
+  .alert { font-size: .8rem; padding: 10px 12px; }
+  .prog-bar { padding: 10px 12px; border-radius: var(--radius-sm); }
+  table { min-width: 360px; }
+}
+
+/* ── XS: móviles pequeños (≤ 479px) ───────────────────────────────────────── */
+@media (max-width: 479px) {
+  .main-content { padding: 8px 8px 76px; }
+
+  .topbar h1 { font-size: .93rem; }
+  .kpi-grid { grid-template-columns: 1fr; }
+
+  .fase-stats { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .fase-stat  { padding: 6px; }
+  .fase-stat-val { font-size: .85rem; }
+
+  table { min-width: 300px; font-size: .78rem; }
+  th, td { padding: 8px 10px; }
+  .badge { padding: 2px 7px; font-size: .66rem; }
+
+  .modal { width: 100%; border-radius: var(--radius) var(--radius) 0 0; position: fixed; bottom: 0; left: 0; max-height: 90vh; }
+  .modal-bg { align-items: flex-end; }
+
+  .btn    { padding: 8px 12px; font-size: .8rem; }
+  .btn-sm { padding: 5px 9px; font-size: .73rem; }
+  .btn-xs { padding: 3px 8px; font-size: .7rem; }
+
+  .search-box input { font-size: .82rem; }
+  .prog-bar select { font-size: .82rem; padding: 8px 10px; }
+
+  .drop-zone { padding: 28px 14px; }
+  .drop-zone svg { width: 36px; height: 36px; }
+  .drop-zone p { font-size: .8rem; }
+
+  .chart-box { height: 190px; }
+
+  #pdfPreview [style*="grid-template-columns:repeat(5"] {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .fase-pct        { font-size: 1.2rem; }
+  .fase-card       { padding: 14px; }
+  .fase-num        { width: 36px; height: 36px; font-size: 1rem; }
+  .fase-nombre     { font-size: .83rem; margin-bottom: 10px; }
+
+  .nav-label { padding: 8px 10px 2px; font-size: .58rem; }
+  .nav-item  { padding: 9px 10px; font-size: .82rem; gap: 8px; }
+  .form-row { grid-template-columns: 1fr; gap: 12px; }
+  .empty-state { padding: 32px 12px; }
+  .empty-panel { padding: 28px 12px; }
+}
+
+/* ── Landscape móvil (altura corta) ───────────────────────────────────────── */
+@media (max-height: 500px) and (max-width: 899px) {
+  .sidebar       { overflow-y: auto; }
+  .main-content  { padding-top: 8px; }
+  .topbar        { margin-bottom: 10px; }
+  .modal         { max-height: 96vh; }
+  .chart-box     { height: 180px; }
+}
+
+/* ── Print ─────────────────────────────────────────────────────────────────── */
+@media print {
+  .sidebar, .mobile-menu-btn, .topbar-right, .btn, .tabs, .modal-bg { display: none !important; }
+  .main-content { margin-left: 0 !important; padding: 12px !important; }
+  .card         { box-shadow: none !important; border: 1px solid #ccc !important; }
+  body          { background: #fff !important; color: #000 !important; }
+  a             { text-decoration: none !important; color: inherit !important; }
+}
