@@ -10,8 +10,8 @@ class JuiciosModel extends BaseModel {
             SUM(j.tipo_juicio='Aprobado')    AS aprobados,
             SUM(j.tipo_juicio='Por evaluar') AS por_evaluar,
             SUM(j.tipo_juicio='No aprobado') AS no_aprobados,
-            MIN(DATE_FORMAT(j.fecha_juicio,'%d/%m/%Y')) AS primer_registro,
-            MAX(DATE_FORMAT(j.fecha_juicio,'%d/%m/%Y')) AS ultimo_registro
+            DATE_FORMAT(MIN(j.fecha_juicio),'%d/%m/%Y') AS primer_registro,
+            DATE_FORMAT(MAX(j.fecha_juicio),'%d/%m/%Y') AS ultimo_registro
         FROM funcionarios f
         JOIN juicios j ON f.documento = j.id_funcionario
         LEFT JOIN resultados r ON j.id_juicio = r.id_juicio
