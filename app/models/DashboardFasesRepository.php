@@ -35,7 +35,15 @@ class DashboardFasesRepository extends BaseModel {
         JOIN actividades_fase af            ON af.id_fase       = fp.id_fase
         JOIN fase_competencia_resultado fcr ON fcr.id_actividad = af.id_actividad
         JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
-                                           AND a.estado = 'En formación'
+                                           AND (
+                                               a.estado = 'En formación'
+                                               OR EXISTS (
+                                                   SELECT 1 FROM juicios j2
+                                                   JOIN resultados r2 ON r2.id_juicio = j2.id_juicio
+                                                   WHERE j2.documento_aprendiz = a.documento
+                                                     AND r2.codigo = fcr.codigo_resultado
+                                               )
+                                           )
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio
             FROM juicios j
@@ -70,7 +78,15 @@ class DashboardFasesRepository extends BaseModel {
         JOIN actividades_fase af            ON af.id_fase       = fp.id_fase
         JOIN fase_competencia_resultado fcr ON fcr.id_actividad = af.id_actividad
         JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
-                                           AND a.estado = 'En formación'
+                                           AND (
+                                               a.estado = 'En formación'
+                                               OR EXISTS (
+                                                   SELECT 1 FROM juicios j2
+                                                   JOIN resultados r2 ON r2.id_juicio = j2.id_juicio
+                                                   WHERE j2.documento_aprendiz = a.documento
+                                                     AND r2.codigo = fcr.codigo_resultado
+                                               )
+                                           )
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio
             FROM juicios j

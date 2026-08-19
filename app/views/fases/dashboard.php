@@ -26,7 +26,15 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
 <div class="card fade-in mb-24" style="padding-bottom:40px">
   <div class="section-title" style="margin-bottom:8px">🗺 Línea de Tiempo — Avance por Fase</div>
   <p style="color:var(--text-muted);font-size:0.83rem;margin-bottom:32px">
-    Compara los resultados de aprendizaje definidos en el <strong>Proyecto Formativo (PDF)</strong> con los juicios evaluativos registrados en el <strong>Excel</strong>. Cada barra de progreso muestra cuántos pares (aprendiz × resultado) ya están aprobados.
+    Compara los resultados de aprendizaje definidos en el <strong>Proyecto Formativo (PDF)</strong> con los juicios evaluativos registrados en el <strong>Excel</strong>.
+    Cada barra muestra cuántos pares (aprendiz × resultado) ya están aprobados.
+    <span style="display:block;margin-top:6px;padding:6px 10px;background:rgba(57,169,0,0.07);border-left:3px solid #39A900;border-radius:4px;font-size:0.8rem">
+      📌 <strong>¿Por qué varía el número de aprendices entre fases?</strong>
+      Cada fase contabiliza únicamente los aprendices que participaron activamente en ella:
+      los que están actualmente <em>En formación</em> y los que ya se retiraron o trasladaron
+      pero tienen al menos un juicio evaluativo registrado en esa fase.
+      Por eso las fases iniciales pueden mostrar más aprendices que las tardías.
+    </span>
   </p>
 
   <div id="phaseTimeline" style="position:relative">
@@ -235,9 +243,9 @@ function actualizarDashboardFases() {
                 <div class="fase-stat-val">${resultados}</div>
                 <div class="fase-stat-lbl">Resultados PF</div>
               </div>
-              <div class="fase-stat">
+              <div class="fase-stat" title="Aprendices En formación + retirados/trasladados con juicios en esta fase">
                 <div class="fase-stat-val">${aprendices}</div>
-                <div class="fase-stat-lbl">Aprendices</div>
+                <div class="fase-stat-lbl">Aprendices ①</div>
               </div>
             </div>
 
