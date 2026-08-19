@@ -37,13 +37,17 @@ class DashboardFasesRepository extends BaseModel {
         JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
                                            AND (
                                                a.estado = 'En formación'
-                                               OR EXISTS (
-                                                   SELECT 1 FROM juicios j2
-                                                   JOIN resultados r2 ON r2.id_juicio = j2.id_juicio
+                                               OR (
+                                                   SELECT MAX(fp2.orden)
+                                                   FROM juicios j2
+                                                   JOIN resultados r2              ON r2.id_juicio        = j2.id_juicio
+                                                   JOIN fase_competencia_resultado fcr2 ON fcr2.codigo_resultado = r2.codigo
+                                                   JOIN actividades_fase af2        ON af2.id_actividad    = fcr2.id_actividad
+                                                   JOIN fases_proyecto fp2          ON fp2.id_fase         = af2.id_fase
+                                                                                   AND fp2.id_ficha        = a.id_ficha
                                                    WHERE j2.documento_aprendiz = a.documento
-                                                     AND r2.codigo = fcr.codigo_resultado
                                                      AND j2.tipo_juicio IN ('Aprobado', 'No aprobado')
-                                               )
+                                               ) >= fp.orden
                                            )
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio
@@ -81,13 +85,17 @@ class DashboardFasesRepository extends BaseModel {
         JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
                                            AND (
                                                a.estado = 'En formación'
-                                               OR EXISTS (
-                                                   SELECT 1 FROM juicios j2
-                                                   JOIN resultados r2 ON r2.id_juicio = j2.id_juicio
+                                               OR (
+                                                   SELECT MAX(fp2.orden)
+                                                   FROM juicios j2
+                                                   JOIN resultados r2              ON r2.id_juicio        = j2.id_juicio
+                                                   JOIN fase_competencia_resultado fcr2 ON fcr2.codigo_resultado = r2.codigo
+                                                   JOIN actividades_fase af2        ON af2.id_actividad    = fcr2.id_actividad
+                                                   JOIN fases_proyecto fp2          ON fp2.id_fase         = af2.id_fase
+                                                                                   AND fp2.id_ficha        = a.id_ficha
                                                    WHERE j2.documento_aprendiz = a.documento
-                                                     AND r2.codigo = fcr.codigo_resultado
                                                      AND j2.tipo_juicio IN ('Aprobado', 'No aprobado')
-                                               )
+                                               ) >= fp.orden
                                            )
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio
