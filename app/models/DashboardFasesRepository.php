@@ -3,6 +3,37 @@ require_once __DIR__ . '/BaseModel.php';
 
 class DashboardFasesRepository extends BaseModel {
 
+    public function getResumenGrupo(?int $idFicha): array {
+        $fichaFilter = '';
+        $params = [];
+        if ($idFicha) {
+            $fichaFilter = ' WHERE a.id_ficha = :id_ficha ';
+            $params[':id_ficha'] = $idFicha;
+        }
+
+        $sql = "SELECT 
+            COUNT(DISTINCT a.documento) AS total_matriculados,
+            COUNT(DISTINCT CASE WHEN a.estado = 'En formación' THEN a.documento END) AS total_activos,
+            COUNT(DISTINCT CASE WHEN a.estado IN ('Retirado', 'Trasladado') THEN a.documento END) AS total_desertados,
+            COUNT(DISTINCT CASE WHEN a.estado = 'Egresado' THEN a.documento END) AS total_egresados
+        FROM aprendices a
+        $fichaFilter";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $res = $stmt->fetch();
+
+        return [
+            'total_matriculados' => (int)($res['total_matriculados'] ?? 0),
+            'total_activos'      => (int)($res['total_activos'] ?? 0),
+            'total_desertados'   => (int)($res['total_desertados'] ?? 0),
+            'total_egresados'    => (int)($res['total_egresados'] ?? 0),
+            'tasa_desercion'     => ($res['total_matriculados'] ?? 0) > 0 
+                ? round((($res['total_desertados'] ?? 0) / $res['total_matriculados']) * 100, 1) 
+                : 0.0
+        ];
+    }
+
     public function getCumplimiento(?int $idFicha): array {
         $fichaFilter = '';
         $params = [];
@@ -35,20 +66,7 @@ class DashboardFasesRepository extends BaseModel {
         JOIN actividades_fase af            ON af.id_fase       = fp.id_fase
         JOIN fase_competencia_resultado fcr ON fcr.id_actividad = af.id_actividad
         JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
-                                           AND (
-                                               a.estado = 'En formación'
-                                               OR (
-                                                   SELECT MAX(fp2.orden)
-                                                   FROM juicios j2
-                                                   JOIN resultados r2              ON r2.id_juicio        = j2.id_juicio
-                                                   JOIN fase_competencia_resultado fcr2 ON fcr2.codigo_resultado = r2.codigo
-                                                   JOIN actividades_fase af2        ON af2.id_actividad    = fcr2.id_actividad
-                                                   JOIN fases_proyecto fp2          ON fp2.id_fase         = af2.id_fase
-                                                                                   AND fp2.id_ficha        = a.id_ficha
-                                                   WHERE j2.documento_aprendiz = a.documento
-                                                     AND j2.tipo_juicio IN ('Aprobado', 'No aprobado')
-                                               ) >= fp.orden
-                                           )
+                                           AND a.estado = 'En formación'
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio
             FROM juicios j
@@ -83,20 +101,7 @@ class DashboardFasesRepository extends BaseModel {
         JOIN actividades_fase af            ON af.id_fase       = fp.id_fase
         JOIN fase_competencia_resultado fcr ON fcr.id_actividad = af.id_actividad
         JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
-                                           AND (
-                                               a.estado = 'En formación'
-                                               OR (
-                                                   SELECT MAX(fp2.orden)
-                                                   FROM juicios j2
-                                                   JOIN resultados r2              ON r2.id_juicio        = j2.id_juicio
-                                                   JOIN fase_competencia_resultado fcr2 ON fcr2.codigo_resultado = r2.codigo
-                                                   JOIN actividades_fase af2        ON af2.id_actividad    = fcr2.id_actividad
-                                                   JOIN fases_proyecto fp2          ON fp2.id_fase         = af2.id_fase
-                                                                                   AND fp2.id_ficha        = a.id_ficha
-                                                   WHERE j2.documento_aprendiz = a.documento
-                                                     AND j2.tipo_juicio IN ('Aprobado', 'No aprobado')
-                                               ) >= fp.orden
-                                           )
+                                           AND a.estado = 'En formación'
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio
             FROM juicios j

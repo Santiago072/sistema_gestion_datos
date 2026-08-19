@@ -20,21 +20,46 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
   </div>
 </div>
 
+<!-- Card de Resumen del Grupo y Deserción -->
+<div class="card fade-in mb-24" id="resumenGrupoCard" style="padding:20px 24px;border-left:4px solid #39A900;background:linear-gradient(135deg, rgba(57,169,0,0.06), rgba(0,0,0,0))">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+    <div>
+      <div style="font-weight:700;font-size:1.05rem;color:var(--text);display:flex;align-items:center;gap:8px">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:20px;height:20px;color:var(--primary)"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
+        Estado y Composición de la Ficha
+      </div>
+      <div style="font-size:0.85rem;color:var(--text-muted);margin-top:2px">
+        El avance por fase se calcula sobre los aprendices actualmente <strong>activos (En formación)</strong> para reflejar el progreso real del grupo.
+      </div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="background:var(--bg);border:1px solid var(--card-border);padding:8px 14px;border-radius:8px;text-align:center;min-width:90px">
+        <div id="statMatriculados" style="font-size:1.25rem;font-weight:800;color:var(--text)">—</div>
+        <div style="font-size:0.72rem;color:var(--text-dim);text-transform:uppercase;font-weight:600">Iniciaron</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--card-border);padding:8px 14px;border-radius:8px;text-align:center;min-width:90px">
+        <div id="statActivos" style="font-size:1.25rem;font-weight:800;color:#39A900">—</div>
+        <div style="font-size:0.72rem;color:var(--text-dim);text-transform:uppercase;font-weight:600">Activos</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--card-border);padding:8px 14px;border-radius:8px;text-align:center;min-width:90px">
+        <div id="statDesertados" style="font-size:1.25rem;font-weight:800;color:#FF6D00">—</div>
+        <div style="font-size:0.72rem;color:var(--text-dim);text-transform:uppercase;font-weight:600">Retirados</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--card-border);padding:8px 14px;border-radius:8px;text-align:center;min-width:90px">
+        <div id="statTasaDesercion" style="font-size:1.25rem;font-weight:800;color:#ef4444">—</div>
+        <div style="font-size:0.72rem;color:var(--text-dim);text-transform:uppercase;font-weight:600">Deserción</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════════════════════════
      LÍNEA DE TIEMPO MEJORADA — Proyecto Formativo vs Juicios
      ══════════════════════════════════════════════════════════ -->
 <div class="card fade-in mb-24" style="padding-bottom:40px">
   <div class="section-title" style="margin-bottom:8px">🗺 Línea de Tiempo — Avance por Fase</div>
   <p style="color:var(--text-muted);font-size:0.83rem;margin-bottom:32px">
-    Compara los resultados de aprendizaje definidos en el <strong>Proyecto Formativo (PDF)</strong> con los juicios evaluativos registrados en el <strong>Excel</strong>.
-    Cada barra muestra cuántos pares (aprendiz × resultado) ya están aprobados.
-    <span style="display:block;margin-top:6px;padding:6px 10px;background:rgba(57,169,0,0.07);border-left:3px solid #39A900;border-radius:4px;font-size:0.8rem">
-      📌 <strong>¿Por qué varía el número de aprendices entre fases?</strong>
-      Cada fase contabiliza únicamente los aprendices que participaron activamente en ella:
-      los que están actualmente <em>En formación</em> y los que ya se retiraron o trasladaron
-      pero tienen al menos un juicio evaluativo registrado en esa fase.
-      Por eso las fases iniciales pueden mostrar más aprendices que las tardías.
-    </span>
+    Compara los resultados de aprendizaje definidos en el <strong>Proyecto Formativo (PDF)</strong> con los juicios evaluativos registrados en el <strong>Excel</strong> para los aprendices en formación.
   </p>
 
   <div id="phaseTimeline" style="position:relative">
@@ -177,7 +202,19 @@ let chartBar, chartDonut;
 function actualizarDashboardFases() {
   const idFicha = document.getElementById('filtroProgramaGlobal').value;
   const urlCumplimiento = (window.BASE_URL || '') + 'index.php?module=fases&action=cumplimiento' + (idFicha ? `&id_ficha=${idFicha}` : '');
+  const urlResumen = (window.BASE_URL || '') + 'index.php?module=fases&action=resumen_grupo' + (idFicha ? `&id_ficha=${idFicha}` : '');
 
+  // 1. Cargar Resumen del Grupo (Iniciaron, Activos, Retirados, Deserción)
+  fetch(urlResumen).then(r=>r.json()).then(res=>{
+    if(res) {
+      document.getElementById('statMatriculados').textContent = res.total_matriculados ?? '—';
+      document.getElementById('statActivos').textContent = res.total_activos ?? '—';
+      document.getElementById('statDesertados').textContent = res.total_desertados ?? '—';
+      document.getElementById('statTasaDesercion').textContent = (res.tasa_desercion ?? 0) + '%';
+    }
+  }).catch(e => console.error("Error al cargar resumen de grupo", e));
+
+  // 2. Cargar Cumplimiento por Fase
   fetch(urlCumplimiento).then(r=>r.json()).then(fases=>{
 
     // ── LÍNEA DE TIEMPO MEJORADA ──────────────────────────────
@@ -243,9 +280,9 @@ function actualizarDashboardFases() {
                 <div class="fase-stat-val">${resultados}</div>
                 <div class="fase-stat-lbl">Resultados PF</div>
               </div>
-              <div class="fase-stat" title="Aprendices En formación + retirados/trasladados con juicios en esta fase">
+              <div class="fase-stat">
                 <div class="fase-stat-val">${aprendices}</div>
-                <div class="fase-stat-lbl">Aprendices ①</div>
+                <div class="fase-stat-lbl">Aprendices Activos</div>
               </div>
             </div>
 

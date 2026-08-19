@@ -35,6 +35,12 @@ class FasesController {
         jsonResponse($this->dashboardFasesRepo->getCumplimiento($idFicha));
     }
 
+    public function ajaxResumenGrupo(): void {
+        verificar_rate_limit(60, 60, 'resumen_grupo');
+        $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
+        jsonResponse($this->dashboardFasesRepo->getResumenGrupo($idFicha));
+    }
+
     public function ajaxDetalle(): void {
         verificar_rate_limit(60, 60, 'detalle_fases');
         $idFase  = !empty($_GET['id_fase']) ? (int)$_GET['id_fase'] : null;

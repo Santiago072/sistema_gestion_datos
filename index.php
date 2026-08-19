@@ -170,6 +170,10 @@ switch ($module) {
             case 'cumplimiento_fases':
                 $ctrl->ajaxCumplimiento();
                 break;
+            case 'resumen_grupo':
+            case 'resumen':
+                $ctrl->ajaxResumenGrupo();
+                break;
             case 'detalle':
             case 'detalle_fases':
                 $ctrl->ajaxDetalle();
