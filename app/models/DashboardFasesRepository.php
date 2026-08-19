@@ -34,7 +34,8 @@ class DashboardFasesRepository extends BaseModel {
         FROM fases_proyecto fp
         JOIN actividades_fase af            ON af.id_fase       = fp.id_fase
         JOIN fase_competencia_resultado fcr ON fcr.id_actividad = af.id_actividad
-        JOIN aprendices a                   ON a.id_ficha       = fp.id_ficha
+        JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
+                                           AND a.estado = 'En formación'
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio
             FROM juicios j
@@ -68,7 +69,8 @@ class DashboardFasesRepository extends BaseModel {
         FROM fases_proyecto fp
         JOIN actividades_fase af            ON af.id_fase       = fp.id_fase
         JOIN fase_competencia_resultado fcr ON fcr.id_actividad = af.id_actividad
-        JOIN aprendices a                   ON a.id_ficha       = fp.id_ficha
+        JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
+                                           AND a.estado = 'En formación'
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio
             FROM juicios j

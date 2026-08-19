@@ -248,16 +248,52 @@ function eliminarProyecto(id_ficha){
   
   fetch(`${API}&subaction=delete_proyecto`,{method:'POST',body:JSON.stringify({id_ficha})}).then(r=>r.json()).then(d=>{
     if(d.ok){
-      // Actualizar estado local inmediatamente sin esperar recarga
+      // 1. Actualizar estado local
       proyectosData = (proyectosData || []).filter(x => x.id_ficha != id_ficha);
+
+      // 2. Limpiar estado de fases/actividades seleccionadas
+      currentFaseId = null;
+      allFases = [];
+      allActividades = [];
+
+      // 3. Resetear selector global para que cargarFases no devuelva datos del programa borrado
+      const globalSel = document.getElementById('globalPrograma');
+      if (globalSel) globalSel.value = '';
+      const pdfSel = document.getElementById('pdfPrograma');
+      if (pdfSel) pdfSel.value = '';
+
+      // 4. Ocultar contenedor del proyecto
       const container = document.getElementById('proyectoContenedor');
       if (container) container.style.display = 'none';
       const fasesCont = document.getElementById('fasesContenedor');
       if (fasesCont) fasesCont.innerHTML = '';
-      
+
+      // 5. Limpiar panel de fases y actividades del tab correspondiente
+      const listaFases = document.getElementById('listaFases');
+      if (listaFases) listaFases.innerHTML = `
+        <div class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z"/></svg>
+          <p>No hay fases configuradas.<br>Carga un PDF o crea una fase manualmente.</p>
+        </div>`;
+
+      const countFases = document.getElementById('countFases');
+      if (countFases) countFases.textContent = '0';
+
+      const listaActs = document.getElementById('listaActividades');
+      if (listaActs) listaActs.innerHTML = `
+        <div class="empty-panel">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59"/></svg>
+          <p>Selecciona una fase para<br>ver sus actividades</p>
+        </div>`;
+
+      document.getElementById('countActividades').style.display = 'none';
+      document.getElementById('filtroActividadesBar').style.display = 'none';
+      document.getElementById('btnNuevaActividad').style.display = 'none';
+      document.getElementById('btnNuevaFase').style.display = 'none';
+
+      // 6. Mostrar mensaje vacío en tab de proyectos
       mostrarMensajeVacio("Este programa ya no tiene un proyecto formativo cargado. Puedes subir un nuevo PDF cuando lo desees.");
       cargarProyectos();
-      cargarFases();
     } else {
       alert('Error: ' + d.error);
     }
