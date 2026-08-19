@@ -42,6 +42,7 @@ class DashboardFasesRepository extends BaseModel {
                                                    JOIN resultados r2 ON r2.id_juicio = j2.id_juicio
                                                    WHERE j2.documento_aprendiz = a.documento
                                                      AND r2.codigo = fcr.codigo_resultado
+                                                     AND j2.tipo_juicio IN ('Aprobado', 'No aprobado')
                                                )
                                            )
         LEFT JOIN (
@@ -85,6 +86,7 @@ class DashboardFasesRepository extends BaseModel {
                                                    JOIN resultados r2 ON r2.id_juicio = j2.id_juicio
                                                    WHERE j2.documento_aprendiz = a.documento
                                                      AND r2.codigo = fcr.codigo_resultado
+                                                     AND j2.tipo_juicio IN ('Aprobado', 'No aprobado')
                                                )
                                            )
         LEFT JOIN (
