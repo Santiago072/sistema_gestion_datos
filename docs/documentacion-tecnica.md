@@ -13,7 +13,8 @@ sistema_gestion_datos/
 │   │   ├── AprendicesController.php   ← Búsqueda, seguimiento y eliminación
 │   │   ├── CargaController.php        ← Importador por lotes de Sofia Plus (Excel/CSV)
 │   │   ├── DashboardController.php    ← Endpoints AJAX de KPIs, curva y auditoría
-│   │   └── FasesController.php        ← Gestión de fases, actividades y carga de PDF
+│   │   ├── FasesController.php        ← Gestión de fases, actividades y carga de PDF
+│   │   └── LandingController.php      ← Controlador de la Landing Page Institucional
 │   ├── models/
 │   │   ├── AprendizModel.php          ← Acceso a datos de aprendices y estados
 │   │   ├── BaseModel.php              ← Conexión base PDO y utilidades
@@ -35,9 +36,10 @@ sistema_gestion_datos/
 │       ├── dashboard/                 ← Vista principal con gráficos Chart.js y tablas
 │       ├── eliminacion/               ← Vista de gestión y borrado de aprendices
 │       ├── fases/                     ← Tablero y gestión de proyectos formativos
+│       ├── landing/                   ← Landing Page de alto impacto (Hero, KPIs, GFPI-F-016)
 │       └── layouts/                   ← Cabecera y pie de página compartidos
 ├── assets/
-│   ├── css/                           ← Hoja de estilos centralizada y modular
+│   ├── css/                           ← Hoja de estilos centralizada y modular (landing.css, etc.)
 │   └── js/                            ← Scripts de interacción frontend (fases.js, etc.)
 ├── config/
 │   ├── database.php                   ← Configuración de conexión PDO (sena_juicios)

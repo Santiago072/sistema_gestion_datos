@@ -55,12 +55,13 @@ require_once __DIR__ . '/app/controllers/AprendizController.php';
 require_once __DIR__ . '/app/controllers/CargaController.php';
 require_once __DIR__ . '/app/controllers/FasesController.php';
 require_once __DIR__ . '/app/controllers/ProgramaController.php';
+require_once __DIR__ . '/app/controllers/LandingController.php';
 
 // ── Obtener Conexión PDO ─────────────────────────────────────────────────────
 $db = getDB();
 
 // ── Enrutamiento por Módulo y Acción ─────────────────────────────────────────
-$module = $_GET['module'] ?? 'dashboard';
+$module = $_GET['module'] ?? 'landing';
 $action = $_GET['action'] ?? 'index';
 
 switch ($module) {
@@ -193,8 +194,18 @@ switch ($module) {
         }
         break;
 
+    case 'landing':
+    case 'inicio':
+        $ctrl = new LandingController($db);
+        if ($action === 'doc') {
+            $ctrl->verDocumento();
+        } else {
+            $ctrl->index();
+        }
+        break;
+
     default:
-        // Si el módulo no existe, redirigir al Dashboard principal
-        header('Location: ' . BASE_URL . '?module=dashboard');
+        // Si el módulo no existe, redirigir a la Landing principal
+        header('Location: ' . BASE_URL . '?module=landing');
         exit();
 }
