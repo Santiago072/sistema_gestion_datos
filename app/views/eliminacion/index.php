@@ -26,8 +26,9 @@ $programas = $db->query("
   </div>
 
   <p style="color:var(--text-muted);margin-bottom:20px;">
-    Elimina un programa formativo completo junto con <strong>todos</strong> sus aprendices, competencias y juicios.
-    <strong style="color:#ef4444;"> Esta acción es irreversible.</strong>
+    Elimina los datos evaluativos de una ficha (aprendices, juicios y calificaciones). 
+    <span style="color:var(--primary);font-weight:600;">Nota:</span> Si la ficha tiene un proyecto formativo asociado (fases y actividades de PDF), su información curricular se preserva intacta.
+    <strong style="color:#ef4444;"> Esta acción es irreversible para los datos de los aprendices.</strong>
   </p>
 
   <div class="table-wrap">

@@ -160,10 +160,15 @@ class CargaController {
             $cntProgramas    = 0;
             $cntJuicios      = 0;
             $cntFuncionarios = 0;
+            $cntAprobados    = 0;
+            $cntPorEvaluar   = 0;
+            $cntNoAprobados  = 0;
             $row_num         = 1;
 
             $programasCache    = [];
             $funcionariosCache = [];
+            $fichasAfectadas   = [];
+            $aprendicesVistos  = []; // doc => estado
 
             $lastDoc = $lastNombres = $lastApellidos = $lastTipo = $lastEstado = '';
             $lastFicha = 0;
@@ -175,7 +180,7 @@ class CargaController {
 
             $BATCH_SIZE = 500;
 
-            $flushAprendices = function() use (&$batchAprendices, $db, &$cntAprendices) {
+            $flushAprendices = function() use (&$batchAprendices, $db) {
                 if (empty($batchAprendices)) return;
                 $placeholders = implode(',', array_fill(0, count($batchAprendices), '(?,?,?,?,?,?)'));
                 $flat = [];
@@ -184,7 +189,6 @@ class CargaController {
                 }
                 $db->prepare("INSERT INTO aprendices(documento,tipo_documento,nombres,apellidos,estado,id_ficha) VALUES $placeholders ON DUPLICATE KEY UPDATE tipo_documento=VALUES(tipo_documento),nombres=VALUES(nombres),apellidos=VALUES(apellidos),estado=VALUES(estado),id_ficha=VALUES(id_ficha)")
                    ->execute($flat);
-                $cntAprendices += count($batchAprendices);
                 $batchAprendices = [];
             };
 
@@ -226,6 +230,10 @@ class CargaController {
                 if (empty($progNombre)) $progNombre = 'Sin programa';
                 $ficha = (int)($fichaRaw ?: (crc32($progNombre) & 0x7FFFFFFF));
 
+                if (!empty($ficha)) {
+                    $fichasAfectadas[$ficha] = true;
+                }
+
                 if (empty($doc)) {
                     if (!empty($lastDoc)) {
                         [$doc, $nombres, $apellidos, $tipo, $estado, $ficha] =
@@ -252,6 +260,8 @@ class CargaController {
                     [$lastDoc, $lastNombres, $lastApellidos, $lastTipo, $lastEstado, $lastFicha] =
                         [$doc, $nombres, $apellidos, $tipo, $estado, $ficha];
                 }
+
+                $aprendicesVistos[$doc] = $estado;
 
                 if (!isset($programasCache[$ficha])) {
                     $batchProgramas[]       = ['ficha' => $ficha, 'nombre' => $progNombre];
@@ -284,22 +294,45 @@ class CargaController {
                 }
                 $resNombre = ltrim($resNombre, "- \t\n\r\0\x0B");
 
+                // Parsear documento y nombre del funcionario / instructor
                 $funcDoc = $colFuncDoc ? preg_replace('/\D/', '', $row[$colFuncDoc] ?? '') : '';
                 $funcNom = $colFuncNom ? trim($row[$colFuncNom] ?? '') : 'Sin asignar';
-                if ($funcNom === '.' || $funcNom === '-' || empty($funcNom)) { $funcNom = 'Sin asignar'; $funcDoc = '9999999'; }
-                elseif (str_contains($funcNom, ' - ')) { $p = explode(' - ', $funcNom, 2); if (empty($funcDoc)) $funcDoc = preg_replace('/\D/','',$p[0]); $funcNom = trim($p[1]); }
-                elseif (str_contains($funcNom, '-'))   { $p = explode('-', $funcNom, 2);   if (empty($funcDoc)) $funcDoc = preg_replace('/\D/','',$p[0]); $funcNom = trim($p[1]); }
-                if (empty($funcDoc)) $funcDoc = ($funcNom !== 'Sin asignar') ? (string)(abs(crc32($funcNom)) & 0x7FFFFFFF) : '9999999';
+                if ($funcNom === '.' || $funcNom === '-' || empty($funcNom)) {
+                    $funcNom = 'Sin asignar';
+                    $funcDoc = '9999999';
+                } elseif (preg_match('/^(\d+)\s*[-_]\s*(.+)$/', $funcNom, $m)) {
+                    if (empty($funcDoc)) $funcDoc = $m[1];
+                    $funcNom = trim($m[2]);
+                } elseif (str_contains($funcNom, ' - ')) {
+                    $p = explode(' - ', $funcNom, 2);
+                    if (empty($funcDoc)) $funcDoc = preg_replace('/\D/', '', $p[0]);
+                    $funcNom = trim($p[1]);
+                } elseif (str_contains($funcNom, '-')) {
+                    $p = explode('-', $funcNom, 2);
+                    if (empty($funcDoc)) $funcDoc = preg_replace('/\D/', '', $p[0]);
+                    $funcNom = trim($p[1]);
+                }
+
+                if (empty($funcDoc)) {
+                    $funcDoc = ($funcNom !== 'Sin asignar') ? (string)(abs(crc32($funcNom)) & 0x7FFFFFFF) : '9999999';
+                }
 
                 if (!isset($funcionariosCache[$funcDoc])) {
-                    $batchFuncionarios[]       = ['doc' => (int)$funcDoc, 'nombre' => $funcNom ?: 'Instructor'];
+                    $batchFuncionarios[]         = ['doc' => (int)$funcDoc, 'nombre' => $funcNom ?: 'Instructor'];
                     $funcionariosCache[$funcDoc] = true;
                 }
 
                 $rawJ = strtoupper(trim($row[$colJuicio] ?? ''));
                 $tipoJuicio = 'Por evaluar';
-                if (str_contains($rawJ,'APROBADO') && !str_contains($rawJ,'NO APROBADO')) $tipoJuicio = 'Aprobado';
-                elseif (str_contains($rawJ,'NO APROBADO') || str_contains($rawJ,'DEFICIENTE')) $tipoJuicio = 'No aprobado';
+                if (str_contains($rawJ,'APROBADO') && !str_contains($rawJ,'NO APROBADO')) {
+                    $tipoJuicio = 'Aprobado';
+                    $cntAprobados++;
+                } elseif (str_contains($rawJ,'NO APROBADO') || str_contains($rawJ,'DEFICIENTE')) {
+                    $tipoJuicio = 'No aprobado';
+                    $cntNoAprobados++;
+                } else {
+                    $cntPorEvaluar++;
+                }
 
                 $fechaJuicio = $colFecha ? trim($row[$colFecha] ?? '') : '';
                 if (is_numeric($fechaJuicio) && (float)$fechaJuicio > 10000) {
@@ -310,10 +343,15 @@ class CargaController {
                 }
 
                 $batchJuicioData[] = [
-                    'doc' => $doc, 'ficha' => $ficha, 'funcDoc' => (int)$funcDoc,
-                    'tipoJuicio' => $tipoJuicio, 'fecha' => $fechaJuicio,
-                    'compCodigo' => $compCodigo, 'compNombre' => $compNombre,
-                    'resCodigo'  => $resCodigo,  'resNombre'  => $resNombre
+                    'doc'        => $doc,
+                    'ficha'      => $ficha,
+                    'funcDoc'    => (int)$funcDoc,
+                    'tipoJuicio' => $tipoJuicio,
+                    'fecha'      => $fechaJuicio,
+                    'compCodigo' => $compCodigo,
+                    'compNombre' => $compNombre,
+                    'resCodigo'  => $resCodigo,
+                    'resNombre'  => $resNombre
                 ];
 
                 if (count($batchAprendices) >= $BATCH_SIZE) {
@@ -327,19 +365,114 @@ class CargaController {
             $flushFuncionarios();
             $flushAprendices();
 
-            if (!empty($batchJuicioData)) {
-                $stmtJ = $db->prepare("INSERT INTO juicios(tipo_juicio,fecha_juicio,id_funcionario,id_ficha,documento_aprendiz) VALUES(?,?,?,?,?)");
-                $stmtR = $db->prepare("INSERT INTO resultados(nombre,codigo,id_juicio) VALUES(?,?,?)");
-                $stmtC = $db->prepare("INSERT INTO competencias(nombre,codigo,id_aprendiz,id_ficha,id_resultado) VALUES(?,?,?,?,?)");
+            // ── Fusión Inteligente de Corte: Proteger avances (lo Aprobado nunca retrocede) ──
+            $fichasNuevas        = [];
+            $fichasActualizadas  = [];
+            $nuevosAprobados     = 0;
+            $antiguosIgnorados   = 0;
+
+            if (!empty($fichasAfectadas) && !empty($batchJuicioData)) {
+                $fichasKeys = array_keys($fichasAfectadas);
+                $inFichas = implode(',', array_fill(0, count($fichasKeys), '?'));
+
+                // Verificar qué fichas ya existían previamente con juicios en la BD
+                $stmtCheckFichas = $db->prepare("SELECT DISTINCT id_ficha FROM juicios WHERE id_ficha IN ($inFichas)");
+                $stmtCheckFichas->execute($fichasKeys);
+                $fichasConJuicios = $stmtCheckFichas->fetchAll(PDO::FETCH_COLUMN);
+                $fichasConJuiciosSet = array_flip($fichasConJuicios);
+
+                foreach ($fichasKeys as $fk) {
+                    if (isset($fichasConJuiciosSet[$fk])) {
+                        $fichasActualizadas[] = $fk;
+                    } else {
+                        $fichasNuevas[] = $fk;
+                    }
+                }
+
+                // 1. Cargar evaluaciones previas existentes en la BD para estas fichas
+                $sqlPrev = "SELECT j.id_juicio, j.documento_aprendiz, j.id_ficha, j.tipo_juicio, j.fecha_juicio, j.id_funcionario,
+                                   r.id_resultado, r.codigo as res_codigo, r.nombre as res_nombre,
+                                   c.id_competencia, c.codigo as comp_codigo, c.nombre as comp_nombre
+                            FROM juicios j
+                            JOIN resultados r ON r.id_juicio = j.id_juicio
+                            JOIN competencias c ON c.id_resultado = r.id_resultado
+                            WHERE j.id_ficha IN ($inFichas)";
+                $stmtPrev = $db->prepare($sqlPrev);
+                $stmtPrev->execute($fichasKeys);
+                $prevRows = $stmtPrev->fetchAll(PDO::FETCH_ASSOC);
+
+                // Mapa clave: doc_aprendiz | codigo_resultado (o nombre si no tiene código)
+                $mapPrev = [];
+                foreach ($prevRows as $pr) {
+                    $k = trim($pr['documento_aprendiz']) . '|' . (trim($pr['res_codigo']) ?: trim($pr['res_nombre']));
+                    $mapPrev[$k] = $pr;
+                }
+
+                // 2. Preparar sentencias para actualización e inserción
+                $stmtUpdateJ = $db->prepare("UPDATE juicios SET tipo_juicio = ?, fecha_juicio = ?, id_funcionario = ? WHERE id_juicio = ?");
+                $stmtUpdateR = $db->prepare("UPDATE resultados SET nombre = ?, codigo = ? WHERE id_resultado = ?");
+                $stmtUpdateC = $db->prepare("UPDATE competencias SET nombre = ?, codigo = ? WHERE id_competencia = ?");
+
+                $stmtInsertJ = $db->prepare("INSERT INTO juicios(tipo_juicio,fecha_juicio,id_funcionario,id_ficha,documento_aprendiz) VALUES(?,?,?,?,?)");
+                $stmtInsertR = $db->prepare("INSERT INTO resultados(nombre,codigo,id_juicio) VALUES(?,?,?)");
+                $stmtInsertC = $db->prepare("INSERT INTO competencias(nombre,codigo,id_aprendiz,id_ficha,id_resultado) VALUES(?,?,?,?,?)");
+
+                $vistosEnArchivo = [];
 
                 foreach ($batchJuicioData as $j) {
+                    $k = trim($j['doc']) . '|' . (trim($j['resCodigo']) ?: trim($j['resNombre']));
+
+                    // Evitar procesar dos veces el mismo resultado para el mismo aprendiz en un mismo archivo
+                    if (isset($vistosEnArchivo[$k])) {
+                        continue;
+                    }
+                    $vistosEnArchivo[$k] = true;
+
                     try {
-                        $stmtJ->execute([$j['tipoJuicio'], $j['fecha'], $j['funcDoc'], $j['ficha'] ?: null, $j['doc'] ?: null]);
-                        $idJ = $db->lastInsertId();
-                        $stmtR->execute([$j['resNombre'], $j['resCodigo'], $idJ]);
-                        $idR = $db->lastInsertId();
-                        $stmtC->execute([$j['compNombre'], $j['compCodigo'], $j['doc'], $j['ficha'] ?: null, $idR]);
-                        $cntJuicios++;
+                        if (isset($mapPrev[$k])) {
+                            $prev = $mapPrev[$k];
+                            $tipoFinal = $j['tipoJuicio'];
+                            $fechaFinal = $j['fecha'];
+                            $funcFinal  = $j['funcDoc'];
+
+                            // REGLA DE ORO: Si ya estaba Aprobado en la BD y el corte entrante dice 'Por evaluar' o 'No aprobado',
+                            // PRESERVAR el estado Aprobado y su instructor/fecha original para proteger los avances reales.
+                            if ($prev['tipo_juicio'] === 'Aprobado' && $j['tipoJuicio'] !== 'Aprobado') {
+                                $tipoFinal  = 'Aprobado';
+                                $fechaFinal = $prev['fecha_juicio'];
+                                $funcFinal  = (int)$prev['id_funcionario'];
+                                $antiguosIgnorados++;
+                            } else {
+                                // Si el archivo entrante aprueba el juicio:
+                                if ($j['tipoJuicio'] === 'Aprobado' && $prev['tipo_juicio'] !== 'Aprobado') {
+                                    $tipoFinal  = 'Aprobado';
+                                    $fechaFinal = $j['fecha'];
+                                    $funcFinal  = $j['funcDoc'];
+                                    $nuevosAprobados++;
+                                }
+                            }
+
+                            // Actualizar juicio existente sin duplicar registros
+                            $stmtUpdateJ->execute([$tipoFinal, $fechaFinal, $funcFinal, $prev['id_juicio']]);
+                            if ($j['resNombre'] !== $prev['res_nombre'] || $j['resCodigo'] !== $prev['res_codigo']) {
+                                $stmtUpdateR->execute([$j['resNombre'], $j['resCodigo'], $prev['id_resultado']]);
+                            }
+                            if ($j['compNombre'] !== $prev['comp_nombre'] || $j['compCodigo'] !== $prev['comp_codigo']) {
+                                $stmtUpdateC->execute([$j['compNombre'], $j['compCodigo'], $prev['id_competencia']]);
+                            }
+                            $cntJuicios++;
+                        } else {
+                            // Registro completamente nuevo: insertar limpiamente
+                            $stmtInsertJ->execute([$j['tipoJuicio'], $j['fecha'], $j['funcDoc'], $j['ficha'] ?: null, $j['doc'] ?: null]);
+                            $idJ = $db->lastInsertId();
+                            $stmtInsertR->execute([$j['resNombre'], $j['resCodigo'], $idJ]);
+                            $idR = $db->lastInsertId();
+                            $stmtInsertC->execute([$j['compNombre'], $j['compCodigo'], $j['doc'], $j['ficha'] ?: null, $idR]);
+                            $cntJuicios++;
+                            if ($j['tipoJuicio'] === 'Aprobado') {
+                                $nuevosAprobados++;
+                            }
+                        }
                     } catch (PDOException $e) {
                         $errores[] = "Juicio aprendiz {$j['doc']}: " . $e->getMessage();
                     }
@@ -348,17 +481,74 @@ class CargaController {
 
             $db->commit();
 
+            // Consultar las métricas consolidadas reales de las fichas afectadas
+            $stmtFichaStats = $db->prepare("
+                SELECT
+                    SUM(tipo_juicio = 'Aprobado')    AS aprobados,
+                    SUM(tipo_juicio = 'Por evaluar') AS por_evaluar,
+                    SUM(tipo_juicio = 'No aprobado') AS no_aprobados,
+                    COUNT(*)                         AS total_juicios
+                FROM juicios
+                WHERE id_ficha IN ($inFichas)
+            ");
+            $stmtFichaStats->execute($fichasKeys);
+            $statsFicha = $stmtFichaStats->fetch(PDO::FETCH_ASSOC);
+
+            // Métricas exactas de aprendices únicos según su estado
+            $totalActivos    = 0;
+            $totalRetirados  = 0;
+            $totalTrasladados= 0;
+            $totalEgresados  = 0;
+            foreach ($aprendicesVistos as $st) {
+                if ($st === 'En formación') $totalActivos++;
+                elseif ($st === 'Retirado') $totalRetirados++;
+                elseif ($st === 'Trasladado') $totalTrasladados++;
+                elseif ($st === 'Egresado') $totalEgresados++;
+            }
+
+            // Construir mensaje inteligente según si es ficha nueva, corte actualizado o corte antiguo
+            $statusTipo = 'actualizada';
+            $fichasTexto = implode(', ', $fichasKeys);
+
+            if (!empty($fichasNuevas) && empty($fichasActualizadas)) {
+                $statusTipo = 'nueva';
+                $mensajePrincipal = "Ficha nueva {$fichasTexto} integrada correctamente.";
+            } elseif ($antiguosIgnorados > 0 && $nuevosAprobados === 0) {
+                $statusTipo = 'antiguo';
+                $mensajePrincipal = "Ficha {$fichasTexto} procesada: El archivo contiene un corte anterior o desactualizado. Se protegieron y mantuvieron intactos los juicios aprobados ya vigentes sin retroceder estados.";
+            } elseif ($nuevosAprobados > 0) {
+                $statusTipo = 'actualizada';
+                $mensajePrincipal = "Ficha {$fichasTexto} actualizada exitosamente con {$nuevosAprobados} nuevos juicios aprobados incorporados.";
+            } else {
+                $statusTipo = 'sin_cambios';
+                $mensajePrincipal = "Ficha {$fichasTexto} verificada y actualizada sin alteraciones en los juicios vigentes.";
+            }
+
             jsonResponse([
-                'ok'                  => true,
-                'error'               => false,
-                'message'             => "Procesamiento completado con éxito",
-                'total_filas'         => count($allRows),
-                'programas'           => $cntProgramas,
-                'aprendices'          => $cntAprendices,
-                'funcionarios'        => $cntFuncionarios,
-                'juicios'             => $cntJuicios,
-                'columnas_detectadas' => $cols,
-                'errores'             => $errores
+                'ok'                        => true,
+                'error'                     => false,
+                'status_tipo'               => $statusTipo,
+                'message'                   => $mensajePrincipal,
+                'fichas_texto'              => $fichasTexto,
+                'fichas_nuevas'             => $fichasNuevas,
+                'fichas_actualizadas'       => $fichasActualizadas,
+                'nuevos_aprobados'          => $nuevosAprobados,
+                'antiguos_ignorados'        => $antiguosIgnorados,
+                'total_filas'               => count($allRows),
+                'total_aprendices_activos'  => $totalActivos,
+                'total_juicios_aprobados'   => (int)($statsFicha['aprobados'] ?? 0),
+                'total_juicios_por_evaluar' => (int)($statsFicha['por_evaluar'] ?? 0),
+                'total_juicios_no_aprobados'=> (int)($statsFicha['no_aprobados'] ?? 0),
+                'total_programas'           => count($fichasAfectadas) ?: 1,
+                'total_retirados'           => $totalRetirados,
+                'total_trasladados'         => $totalTrasladados,
+                'total_egresados'           => $totalEgresados,
+                'total_funcionarios'        => count($funcionariosCache),
+                'fichas_actualizadas_count' => count($fichasAfectadas),
+                'total_aprendices_unicos'   => count($aprendicesVistos),
+                'juicios'                   => (int)($statsFicha['total_juicios'] ?? $cntJuicios),
+                'columnas_detectadas'       => $cols,
+                'errores'                   => $errores
             ]);
 
         } catch (Throwable $e) {

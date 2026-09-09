@@ -224,27 +224,49 @@ function subirArchivo() {
       if (d.error) { showMsg('error', d.message); return; }
 
       const erroresHtml = (d.errores || []).slice(0, 8).join('<br>');
+      let alertCls = 'alert-success';
+      let alertIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:20px;height:20px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+
+      if (d.status_tipo === 'nueva') {
+        alertCls = 'alert-success';
+        alertIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:20px;height:20px;color:#00BCD4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+      } else if (d.status_tipo === 'antiguo') {
+        alertCls = 'alert-warning';
+        alertIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:20px;height:20px;color:#F59E0B"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>`;
+      }
+
       const resHtml = `
-        <div class="alert alert-success">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <div><strong>¡Carga exitosa!</strong> Se procesaron <strong>${d.total_filas}</strong> filas.</div>
+        <div class="alert ${alertCls}" style="margin-top:16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px">
+          ${alertIcon}
+          <div>
+            <div style="font-size:0.95rem;font-weight:700">${d.message}</div>
+            <div style="font-size:0.8rem;opacity:0.85;margin-top:2px">Se procesaron <strong>${d.total_filas}</strong> filas del archivo.</div>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px">
           <div style="background:rgba(57,169,0,0.1);border:1px solid rgba(57,169,0,0.25);border-radius:8px;padding:12px;text-align:center">
-            <div style="font-size:1.6rem;font-weight:800;color:#39A900">${d.programas}</div>
-            <div style="font-size:.72rem;color:#7a8fa6">Programas</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#39A900">${d.total_programas || (d.fichas_actualizadas ? d.fichas_actualizadas.length : 1) || 1}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Fichas / Progs</div>
           </div>
           <div style="background:rgba(0,188,212,0.1);border:1px solid rgba(0,188,212,0.25);border-radius:8px;padding:12px;text-align:center">
-            <div style="font-size:1.6rem;font-weight:800;color:#00BCD4">${d.aprendices}</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#00BCD4">${(d.total_aprendices_unicos || 0).toLocaleString('es-CO')}</div>
             <div style="font-size:.72rem;color:#7a8fa6">Aprendices</div>
           </div>
           <div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:12px;text-align:center">
-            <div style="font-size:1.6rem;font-weight:800;color:#3B82F6">${d.funcionarios}</div>
-            <div style="font-size:.72rem;color:#7a8fa6">Funcionarios</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#3B82F6">${(d.total_funcionarios || 0).toLocaleString('es-CO')}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Instructores</div>
+          </div>
+          <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:800;color:#10B981">${(d.total_juicios_aprobados || 0).toLocaleString('es-CO')}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Aprobados</div>
           </div>
           <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:12px;text-align:center">
-            <div style="font-size:1.6rem;font-weight:800;color:#F59E0B">${d.juicios}</div>
-            <div style="font-size:.72rem;color:#7a8fa6">Juicios</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#F59E0B">${(d.total_juicios_por_evaluar || 0).toLocaleString('es-CO')}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">Por Evaluar</div>
+          </div>
+          <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:1.6rem;font-weight:800;color:#EF4444">${(d.total_juicios_no_aprobados || 0).toLocaleString('es-CO')}</div>
+            <div style="font-size:.72rem;color:#7a8fa6">No Aprobados</div>
           </div>
         </div>
         ${d.columnas_detectadas ? `<div style="margin-top:10px;font-size:.75rem;color:#7a8fa6">Columnas detectadas: <em>${d.columnas_detectadas.join(', ')}</em></div>` : ''}

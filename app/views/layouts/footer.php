@@ -22,6 +22,12 @@ window.badgeEstado = function(e) {
   return `<span class="badge badge-gray">${e}</span>`;
 };
 
+window.escapeHtml = function(str) {
+  return String(str ?? '').replace(/[&<>"']/g, function(m) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+  });
+};
+
 
 // Count-up animation for KPI values
 function animateCount(el) {

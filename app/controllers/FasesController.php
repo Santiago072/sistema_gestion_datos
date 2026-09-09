@@ -30,19 +30,19 @@ class FasesController {
     }
 
     public function ajaxCumplimiento(): void {
-        verificar_rate_limit(60, 60, 'cumplimiento_fases');
+        verificar_rate_limit(180, 60, 'cumplimiento_fases');
         $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
         jsonResponse($this->dashboardFasesRepo->getCumplimiento($idFicha));
     }
 
     public function ajaxResumenGrupo(): void {
-        verificar_rate_limit(60, 60, 'resumen_grupo');
+        verificar_rate_limit(180, 60, 'resumen_grupo');
         $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
         jsonResponse($this->dashboardFasesRepo->getResumenGrupo($idFicha));
     }
 
     public function ajaxDetalle(): void {
-        verificar_rate_limit(60, 60, 'detalle_fases');
+        verificar_rate_limit(180, 60, 'detalle_fases');
         $idFase  = !empty($_GET['id_fase']) ? (int)$_GET['id_fase'] : null;
         $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
         jsonResponse($this->dashboardFasesRepo->getDetalleFases($idFase, $idFicha));

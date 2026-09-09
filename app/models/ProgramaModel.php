@@ -41,10 +41,31 @@ class ProgramaModel extends BaseModel {
             $stmtA = $this->db->prepare($sqlAprendices);
             $stmtA->execute([':ficha' => $id_ficha]);
         
-            // 5. Eliminar el programa
-            $sqlPrograma = "DELETE FROM programas WHERE id_ficha = :ficha";
-            $stmtP = $this->db->prepare($sqlPrograma);
-            $stmtP->execute([':ficha' => $id_ficha]);
+            // 5. Verificar si este programa tiene un proyecto formativo asociado (PDF cargado o fases)
+            $stmtCheck = $this->db->prepare("
+                SELECT 1 FROM fases_proyecto WHERE id_ficha = :ficha 
+                UNION 
+                SELECT 1 FROM programas WHERE id_ficha = :ficha2 AND (nombre_proyecto IS NOT NULL OR codigo_programa_sofia IS NOT NULL)
+                LIMIT 1
+            ");
+            $stmtCheck->execute([':ficha' => $id_ficha, ':ficha2' => $id_ficha]);
+            $tieneProyecto = (bool)$stmtCheck->fetch();
+
+            // Si NO tiene proyecto formativo vinculado, podemos eliminar el registro de programas por completo
+            if (!$tieneProyecto) {
+                // Eliminar fases o residuos si existieran
+                $this->db->prepare("DELETE FROM fase_competencia_resultado WHERE id_ficha = :ficha")->execute([':ficha' => $id_ficha]);
+                $this->db->prepare("DELETE FROM actividades_fase WHERE id_ficha = :ficha")->execute([':ficha' => $id_ficha]);
+                $this->db->prepare("DELETE FROM fases_proyecto WHERE id_ficha = :ficha")->execute([':ficha' => $id_ficha]);
+
+                // Eliminar el programa
+                $sqlPrograma = "DELETE FROM programas WHERE id_ficha = :ficha";
+                $stmtP = $this->db->prepare($sqlPrograma);
+                $stmtP->execute([':ficha' => $id_ficha]);
+            }
+            // NOTA: Si SÍ tiene proyecto formativo (PDF), se conservan intactos sus datos (nombre_proyecto,
+            // centro_formacion, regional, duración, fases y actividades), permitiendo que la información
+            // del proyecto no se degrade ni se pierda al eliminar o limpiar la ficha evaluativa de aprendices.
         
             $this->db->commit();
         } catch (Exception $e) {

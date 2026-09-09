@@ -23,6 +23,34 @@ class DashboardFasesRepository extends BaseModel {
         $stmt->execute($params);
         $res = $stmt->fetch();
 
+        // Métricas de Cobertura Curricular (Proyecto PDF vs Evaluados)
+        $fcrFilter = '';
+        $fcrParams = [];
+        if ($idFicha) {
+            $fcrFilter = ' WHERE fcr.id_ficha = :id_ficha ';
+            $fcrParams[':id_ficha'] = $idFicha;
+        }
+
+        $sqlCobertura = "SELECT 
+            COUNT(DISTINCT fcr.codigo_resultado) AS total_resultados_proyecto,
+            COUNT(DISTINCT CASE WHEN ev.tipo_juicio IS NOT NULL THEN fcr.codigo_resultado END) AS resultados_con_juicio,
+            COUNT(DISTINCT CASE WHEN ev.tipo_juicio = 'Aprobado' THEN fcr.codigo_resultado END) AS resultados_aprobados
+        FROM fase_competencia_resultado fcr
+        LEFT JOIN (
+            SELECT DISTINCT j.documento_aprendiz, r.codigo, j.tipo_juicio
+            FROM juicios j
+            JOIN resultados r ON r.id_juicio = j.id_juicio
+        ) ev ON ev.codigo = fcr.codigo_resultado
+        $fcrFilter";
+
+        $stmtCob = $this->db->prepare($sqlCobertura);
+        $stmtCob->execute($fcrParams);
+        $resCob = $stmtCob->fetch();
+
+        $totProy = (int)($resCob['total_resultados_proyecto'] ?? 0);
+        $evalCob = (int)($resCob['resultados_con_juicio'] ?? 0);
+        $pctCob  = $totProy > 0 ? round(($evalCob / $totProy) * 100, 1) : 0.0;
+
         return [
             'total_matriculados' => (int)($res['total_matriculados'] ?? 0),
             'total_activos'      => (int)($res['total_activos'] ?? 0),
@@ -30,7 +58,13 @@ class DashboardFasesRepository extends BaseModel {
             'total_egresados'    => (int)($res['total_egresados'] ?? 0),
             'tasa_desercion'     => ($res['total_matriculados'] ?? 0) > 0 
                 ? round((($res['total_desertados'] ?? 0) / $res['total_matriculados']) * 100, 1) 
-                : 0.0
+                : 0.0,
+            'cobertura'          => [
+                'total_proyecto' => $totProy,
+                'evaluados'      => $evalCob,
+                'aprobados'      => (int)($resCob['resultados_aprobados'] ?? 0),
+                'porcentaje'     => $pctCob
+            ]
         ];
     }
 
@@ -66,7 +100,7 @@ class DashboardFasesRepository extends BaseModel {
         JOIN actividades_fase af            ON af.id_fase       = fp.id_fase
         JOIN fase_competencia_resultado fcr ON fcr.id_actividad = af.id_actividad
         JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
-                                           AND a.estado = 'En formación'
+                                           AND a.estado LIKE 'En formac%'
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio
             FROM juicios j
@@ -93,22 +127,25 @@ class DashboardFasesRepository extends BaseModel {
             $params[':id_ficha'] = $idFicha;
         }
 
-        $sql = "SELECT fp.orden, fp.nombre_fase,
-            CONCAT(a.nombres,' ',a.apellidos) AS aprendiz,
-            a.estado AS estado_aprendiz, fcr.nombre_competencia AS competencia,
-            fcr.nombre_resultado AS resultado_aprendizaje, COALESCE(ev.tipo_juicio, 'Por evaluar') AS estado_en_fase
+        $sql = "SELECT fp.orden, fp.nombre_fase, fp.id_fase,
+            a.documento, CONCAT(a.nombres,' ',a.apellidos) AS aprendiz,
+            a.estado AS estado_aprendiz,
+            af.id_actividad, af.nombre AS actividad,
+            fcr.nombre_competencia AS competencia,
+            fcr.nombre_resultado AS resultado_aprendizaje,
+            COALESCE(ev.tipo_juicio, 'Por evaluar') AS estado_en_fase
         FROM fases_proyecto fp
         JOIN actividades_fase af            ON af.id_fase       = fp.id_fase
         JOIN fase_competencia_resultado fcr ON fcr.id_actividad = af.id_actividad
         JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
-                                           AND a.estado = 'En formación'
+                                           AND a.estado LIKE 'En formac%'
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio
             FROM juicios j
             JOIN resultados r ON r.id_juicio = j.id_juicio
         ) ev ON ev.documento_aprendiz = a.documento AND ev.codigo = fcr.codigo_resultado
         WHERE 1=1 {$and}
-        ORDER BY fp.orden, a.apellidos, a.nombres";
+        ORDER BY fp.orden, a.apellidos, a.nombres, af.id_actividad";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
