@@ -332,7 +332,17 @@ function actualizarDashboardFases() {
     const timeline = document.getElementById('phaseTimeline');
 
     if (!fases.length) {
-      timeline.innerHTML = '<p class="text-muted">Sin fases configuradas o sin datos para el programa seleccionado. Suba el PDF del Proyecto Formativo.</p>';
+      timeline.innerHTML = `
+        <div style="padding:24px;text-align:center;background:var(--bg2);border-radius:10px;border:1px dashed var(--card-border)">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:36px;height:36px;margin:0 auto 10px;color:var(--text-dim);display:block">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          <p style="color:var(--text);font-weight:600;margin-bottom:4px">Sin datos de avance o fases para mostrar</p>
+          <p class="text-muted" style="font-size:0.85rem;max-width:520px;margin:0 auto">
+            Si la ficha no tiene aprendices activos matriculados (0 aprendices), o aún no tiene un Proyecto Formativo asignado, no es posible calcular los porcentajes de avance por fase.
+          </p>
+        </div>
+      `;
     } else {
       let legendHtml = `
         <div class="fase-legend">

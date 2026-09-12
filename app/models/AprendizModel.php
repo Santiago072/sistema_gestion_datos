@@ -84,7 +84,9 @@ class AprendizModel extends BaseModel {
         FROM programas p
         LEFT JOIN aprendices a ON p.id_ficha = a.id_ficha
         $where
-        GROUP BY p.id_ficha, p.nombre ORDER BY p.nombre";
+        GROUP BY p.id_ficha, p.nombre 
+        HAVING total_aprendices > 0
+        ORDER BY p.nombre";
         
         $stmt = $this->db->prepare($sql);
         if ($prog) {
