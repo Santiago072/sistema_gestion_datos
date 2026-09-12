@@ -4,13 +4,20 @@ require_once __DIR__ . '/BaseModel.php';
 class ProgramaModel extends BaseModel {
 
     public function getAll(): array {
-        $stmt = $this->db->query("
-            SELECT p.id_ficha, p.nombre, p.id_proyecto, pf.nombre_proyecto, pf.codigo_programa_sofia
-            FROM programas p
-            LEFT JOIN proyectos_formativos pf ON p.id_proyecto = pf.id_proyecto
-            ORDER BY p.nombre
-        ");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Consultar con fallback robusto por si la migración de base de datos aún no se ha aplicado en el entorno
+        try {
+            $stmt = $this->db->query("
+                SELECT p.id_ficha, p.nombre, p.id_proyecto, pf.nombre_proyecto, pf.codigo_programa_sofia
+                FROM programas p
+                LEFT JOIN proyectos_formativos pf ON p.id_proyecto = pf.id_proyecto
+                ORDER BY p.nombre
+            ");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            // Fallback si la tabla proyectos_formativos o la columna id_proyecto no existen aún en la base de datos del host
+            $stmt = $this->db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
     }
 
     public function eliminar(string $id_ficha): void {

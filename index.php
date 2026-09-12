@@ -36,7 +36,10 @@ set_exception_handler(function (Throwable $e) use ($logFile) {
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['error' => true, 'message' => 'Error interno del servidor: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     } else {
-        echo "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'><title>500 - Error Interno</title><style>body{font-family:system-ui,-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:40px;text-align:center;}h1{color:#ef4444;}a{color:#39A900;text-decoration:none;font-weight:600;}</style></head><body><h1>500 — Error Interno</h1><p>Ocurrió un problema inesperado al procesar su solicitud.</p><p><a href='?module=dashboard'>Volver al Dashboard</a></p></body></html>";
+        $msg = htmlspecialchars($e->getMessage());
+        $file = htmlspecialchars(basename($e->getFile()));
+        $line = $e->getLine();
+        echo "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'><title>500 - Error Interno</title><style>body{font-family:system-ui,-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;padding:40px;text-align:center;}h1{color:#ef4444;}a{color:#39A900;text-decoration:none;font-weight:600;}.err-box{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);padding:12px 18px;border-radius:8px;max-width:600px;margin:20px auto;font-family:monospace;font-size:0.85rem;color:#fca5a5;text-align:left;word-break:break-word;}</style></head><body><h1>500 — Error Interno</h1><p>Ocurrió un problema al procesar su solicitud:</p><div class='err-box'><strong>Detalle:</strong> {$msg}<br><span style='color:#94a3b8;'>en {$file}:{$line}</span></div><p><a href='?module=dashboard'>Volver al Dashboard</a></p></body></html>";
     }
     exit();
 });

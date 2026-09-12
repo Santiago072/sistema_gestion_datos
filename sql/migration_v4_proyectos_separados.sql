@@ -2,7 +2,6 @@
 -- MIGRACIÓN v4: Desacoplamiento de Proyectos Formativos y Fichas
 -- Fecha: 2026-09-11
 -- Base de datos: sena_juicios (MariaDB / MySQL)
--- TOTALMENTE IDEMPOTENTE: Puede ejecutarse 1 o N veces sin duplicar ni fallar
 -- ================================================================
 
 USE sena_juicios;
@@ -23,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `proyectos_formativos` (
   KEY `idx_pf_sofia` (`codigo_programa_sofia`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 2. Migrar los proyectos existentes desde `programas` a `proyectos_formativos` (solo si la columna nombre_proyecto o codigo_programa_sofia aún existe en programas)
+-- 2. Migrar los proyectos existentes desde `programas` a `proyectos_formativos`
 SET @exist_nombre_proy := (
   SELECT COUNT(*) FROM information_schema.COLUMNS 
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'programas' AND COLUMN_NAME = 'nombre_proyecto'
@@ -56,7 +55,7 @@ PREPARE stmt_prog FROM @sql_prog;
 EXECUTE stmt_prog;
 DEALLOCATE PREPARE stmt_prog;
 
--- 4. Asociar cada programa con su id_proyecto correspondiente (si aún tiene columnas viejas)
+-- 4. Asociar cada programa con su id_proyecto correspondiente
 SET @sql_asoc := IF(@exist_nombre_proy > 0, 
   'UPDATE `programas` p
    JOIN `proyectos_formativos` pf 
@@ -82,7 +81,7 @@ SET @exist_fcr_col := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TAB
 SET @sql_fcr := IF(@exist_fcr_col = 0, 'ALTER TABLE `fase_competencia_resultado` ADD COLUMN `id_proyecto` INT(11) NULL DEFAULT NULL AFTER `id`', 'SELECT 1');
 PREPARE stmt_fcr FROM @sql_fcr; EXECUTE stmt_fcr; DEALLOCATE PREPARE stmt_fcr;
 
--- 6. Rellenar id_proyecto en fases_proyecto, actividades_fase y fase_competencia_resultado si están NULL
+-- 6. Rellenar id_proyecto en fases_proyecto, actividades_fase y fase_competencia_resultado
 UPDATE `fases_proyecto` fp
 JOIN `programas` p ON fp.id_ficha = p.id_ficha
 SET fp.id_proyecto = p.id_proyecto
@@ -98,13 +97,13 @@ JOIN `actividades_fase` af ON fcr.id_actividad = af.id_actividad
 SET fcr.id_proyecto = af.id_proyecto
 WHERE fcr.id_proyecto IS NULL AND af.id_proyecto IS NOT NULL;
 
--- 7. Agregar índices (idempotente)
+-- 7. Agregar índices
 ALTER TABLE `programas` ADD INDEX IF NOT EXISTS `idx_programas_proyecto` (`id_proyecto`);
 ALTER TABLE `fases_proyecto` ADD INDEX IF NOT EXISTS `idx_fases_proyecto_id` (`id_proyecto`);
 ALTER TABLE `actividades_fase` ADD INDEX IF NOT EXISTS `idx_actividades_proyecto_id` (`id_proyecto`);
 ALTER TABLE `fase_competencia_resultado` ADD INDEX IF NOT EXISTS `idx_fcr_proyecto_id` (`id_proyecto`);
 
--- 8. Clave foránea segura (idempotente)
+-- 8. Clave foránea segura
 SET @exist_fk := (
   SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS 
   WHERE CONSTRAINT_SCHEMA = DATABASE() 
