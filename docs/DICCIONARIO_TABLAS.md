@@ -4,22 +4,65 @@ Este documento detalla el propósito, origen de datos, estructura de campos, cla
 
 ---
 
-## 🗂️ Resumen de Tablas por Origen de Información
+## 🏛️ 1. Clasificación Funcional de las Tablas por Capas de Negocio
 
-El sistema unifica dos fuentes de datos principales:
+El modelo de datos no es una colección plana de tablas; está diseñado arquitectónicamente en **tres capas bien diferenciadas**:
 
-| Tabla | Origen de Datos | Propósito Principal |
-| :--- | :--- | :--- |
-| `proyectos_formativos` | **PDF GFPI-F-016** / Registro Manual | Cabecera general del proyecto formativo institucional. |
-| `fases_proyecto` | **PDF GFPI-F-016** | Fases curriculares (`ANÁLISIS`, `PLANEACIÓN`, `EJECUCIÓN`, `EVALUACIÓN`). |
-| `actividades_fase` | **PDF GFPI-F-016** | Actividades de proyecto formativo asociadas a cada fase. |
-| `fase_competencia_resultado` | **PDF GFPI-F-016** | Mapeo curricular: actividad ↔ competencia ↔ resultado. |
-| `programas` | **Sofia Plus (Excel/CSV)** | Fichas de caracterización y su vinculación al proyecto formativo. |
-| `aprendices` | **Sofia Plus (Excel/CSV)** | Datos de aprendices matriculados y sus estados de formación. |
-| `competencias` | **Sofia Plus (Excel/CSV)** | Competencias asignadas y cursadas por cada aprendiz. |
-| `resultados` | **Sofia Plus (Excel/CSV)** | Resultados de aprendizaje evaluados a los aprendices. |
-| `juicios` | **Sofia Plus (Excel/CSV)** | Juicios evaluativos (`APROBADO`, `POR EVALUAR`, `NO APROBADO`). |
-| `funcionarios` | **Sofia Plus (Excel/CSV)** | Instructores y evaluadores que emitieron los juicios en el sistema. |
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ 1. CAPA CURRICULAR Y ESTRUCTURA PEDAGÓGICA (Formato SENA GFPI-F-016 - PDF)       │
+│    proyectos_formativos │ fases_proyecto │ actividades_fase │ fase_competencia_...│
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │ Cruce Curricular (codigo_resultado)
+┌────────────────────────────────────────▼─────────────────────────────────────────┐
+│ 2. CAPA BASE OPERATIVA Y ENTIDADES MAESTRAS (Sofia Plus)                          │
+│    programas (Fichas) │ aprendices │ funcionarios (Instructores)                  │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │ Alimenta la evaluación
+┌────────────────────────────────────────▼─────────────────────────────────────────┐
+│ 3. LAS 3 TABLAS CENTRALES DE CONSULTAS Y ANALÍTICA EVALUATIVA (Motor del Sistema) │
+│    ★ competencias  │  ★ resultados  │  ★ juicios                                 │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Bloque A: Capa Curricular (Estructura Teórica del Proyecto - PDF GFPI-F-016)
+Almacena el **diseño pedagógico oficial** aprobado por la Dirección de Formación Profesional del SENA. Define qué se *debería* aprender:
+1. **`proyectos_formativos`:** Maestro de proyectos formativos globales e independientes.
+2. **`fases_proyecto`:** Las 4 fases secuenciales (`ANÁLISIS`, `PLANEACIÓN`, `EJECUCIÓN`, `EVALUACIÓN`).
+3. **`actividades_fase`:** Actividades técnicas y productivas que componen cada fase.
+4. **`fase_competencia_resultado`:** Matriz que asocia qué resultados de aprendizaje tributan a cada actividad y competencia.
+
+---
+
+### Bloque B: Capa Base Operativa (Entidades Maestras de Sofia Plus)
+Almacena los **actores y grupos humanos** del proceso formativo:
+5. **`programas` (Fichas):** Fichas de caracterización activas. Posee la llave foránea `id_proyecto` para heredar la malla curricular del Bloque A.
+6. **`aprendices`:** Información demográfica de los estudiantes y su estado de matrícula (`En formación`, `Retirado`, `Trasladado`, `Egresado`).
+7. **`funcionarios`:** Catálogo institucional de instructores y evaluadores registrados en Sofia Plus.
+
+---
+
+### Bloque C: Las 3 Tablas Centrales de Consultas Analíticas (Motor de Juicios)
+Estas tres tablas conforman el **núcleo transaccional de evaluación**. Es sobre esta tríada donde se ejecutan todas las consultas analíticas de alto impacto del sistema:
+
+8. **`competencias` (Capa de Agrupación Curricular):**
+   - Asigna las competencias específicas y transversales que cursa cada aprendiz en su ficha.
+   - Permite consultar el avance agrupado y alimentar el eje horizontal de la Curva de Supervivencia.
+9. **`resultados` (Capa de Unidad de Juicio):**
+   - Desglosa cada uno de los resultados de aprendizaje específicos que componen la competencia.
+   - Contiene el `codigo` que se cruza con `fase_competencia_resultado.codigo_resultado` para calcular el avance porcentual por fase formativa.
+10. **`juicios` (Capa de Dictamen y Auditoría):**
+    - Asienta el veredicto oficial (`APROBADO`, `POR EVALUAR`, `NO APROBADO`).
+    - Guarda la **marca temporal exacta (`fecha_juicio`)** y el **instructor (`id_funcionario`)**, lo que hace posible determinar el momento real de retiro en la curva 2025 y la auditoría de docentes.
+
+#### 🚀 ¿Qué analíticas y pantallas se alimentan de estas 3 tablas de consultas?
+- **El Dashboard de KPIs:** Calcula el número total de juicios aprobados frente a los pendientes por evaluar mediante `JOIN` entre `aprendices`, `competencias`, `resultados` y `juicios`.
+- **La Curva de Supervivencia Estudiantil:** Reconstruye la deserción y retención a lo largo de las competencias ordenadas cronológicamente por `juicios.fecha_juicio`.
+- **La Auditoría de Instructores:** Consulta el volumen de juicios emitidos por cada docente y sus fechas extremas (primer y último registro evaluado).
+- **El Seguimiento Individual de Aprendices:** Despliega la sábana de notas individual con el estado de cada resultado.
+- **El Filtro Avanzado Multicriterio:** Motor de búsqueda que cruza aprendices con sus juicios para exportar a CSV estructurado.
 
 ---
 

@@ -212,12 +212,32 @@ Información demográfica y estado formativo de los aprendices registrados en SO
 - `estado` (ENUM): `En formación`, `Retirado`, `Trasladado`, `Egresado`.
 - `id_ficha` (INT, FK): Ficha a la que pertenece el aprendiz.
 
-### 7. `competencias`, `resultados` y `juicios`
-Tablas operativas alimentadas por la carga masiva del reporte de juicios de SOFIA Plus:
-- `competencias`: Almacena el listado de competencias cursadas por cada aprendiz.
-- `resultados`: Resultados específicos asociados a dichas competencias.
-- `juicios`: Registra el estado de aprobación (`APROBADO`, `POR EVALUAR`, `NO APROBADO`), fecha de evaluación e instructor que emitió el juicio.
-- `funcionarios`: Catálogo de instructores evaluadores registrados en las actas de SOFIA Plus.
+### 7. Las 3 Tablas Centrales de Consultas Analíticas (`competencias`, `resultados`, `juicios`)
+
+Estas tres tablas constituyen el **corazón evaluativo y analítico del sistema**. Es sobre este trío donde se construyen todas las analíticas, reportes y dashboards en tiempo real:
+
+#### 7.1. `competencias` (Agrupador Curricular Operativo)
+- **Propósito:** Almacena la relación de normas de competencia cursadas por cada aprendiz en su ficha.
+- **Campos:** `id_competencia` (PK, INT), `codigo` (VARCHAR(20)), `nombre` (TEXT), `id_aprendiz` (FK, VARCHAR), `id_ficha` (FK, INT).
+- **Función en Consultas:** Alimenta el eje horizontal de la **Curva de Retiros y Supervivencia**, agrupando a los aprendices por cada módulo de formación cursado.
+
+#### 7.2. `resultados` (Unidad de Juicio Evaluativo)
+- **Propósito:** Desglosa cada uno de los resultados de aprendizaje específicos que componen la competencia cursada por el aprendiz.
+- **Campos:** `id_resultado` (PK, INT), `codigo` (VARCHAR(20)), `nombre` (TEXT), `id_juicio` (FK, INT).
+- **Función en Consultas:** Es el nexo de cruce directo con la matriz del PDF (`fase_competencia_resultado.codigo_resultado`). Permite calcular el **porcentaje de cumplimiento por fase formativa** y alimentar la sábana de notas del aprendiz.
+
+#### 7.3. `juicios` (Veredicto y Auditoría Temporal)
+- **Propósito:** Registra el dictamen oficial emitido (`APROBADO`, `POR EVALUAR`, `NO APROBADO`), la estampa temporal exacta y el instructor firmante.
+- **Campos:** `id_juicio` (PK, INT), `tipo_juicio` (VARCHAR(50)), `fecha_juicio` (DATETIME), `id_funcionario` (FK, INT).
+- **Función en Consultas:** 
+  - Alimenta los **KPIs del Dashboard** (conteo de aprobados vs pendientes).
+  - Permite calcular la **fecha real del retiro en 2025** (último juicio aprobado antes de la salida).
+  - Permite la **Auditoría Docente** (fecha de primer y último juicio evaluado por cada funcionario).
+
+### 8. `funcionarios`
+- **Propósito:** Catálogo institucional de instructores y evaluadores registrados en Sofia Plus.
+- **Campos:** `documento` (PK, INT) y `nombre` (VARCHAR(255)).
+- **Función en Consultas:** Vincula cada juicio evaluativo con el nombre y cédula del docente responsable.
 
 ---
 

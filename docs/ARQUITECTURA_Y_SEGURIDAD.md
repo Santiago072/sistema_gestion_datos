@@ -40,19 +40,56 @@ graph TB
         M_RET["RetiradosModel (Curva Supervivencia)"]
         M_JUI["JuiciosModel (Auditoría)"]
         M_FAS["FasesModel / DashboardFasesRepository"]
+        M_PROY["ProyectoModel (CRUD Proyectos)"]
     end
 
-    subgraph DATABASE["💾 Base de Datos"]
-        DB[("MariaDB / MySQL\nsena_juicios")]
+    subgraph DATABASE["💾 Base de Datos (3 Capas Funcionales)"]
+        subgraph DB_CURR["🏛️ Capa Curricular (PDF GFPI-F-016)"]
+            T_PROY["proyectos_formativos"]
+            T_FAS["fases_proyecto"]
+            T_ACT["actividades_fase"]
+            T_FCR["fase_competencia_resultado"]
+        end
+
+        subgraph DB_BASE["👥 Capa Base Operativa (Sofia Plus)"]
+            T_PROG["programas (Fichas)"]
+            T_APR["aprendices"]
+            T_FUNC["funcionarios"]
+        end
+
+        subgraph DB_EVAL["📊 Las 3 Tablas Centrales de Consultas"]
+            T_COMP["competencias"]
+            T_RES["resultados"]
+            T_JUI["juicios"]
+        end
     end
 
     CLIENT_LAYER --> INDEX
     INDEX --> CONTROLLERS
     CONTROLLERS --> SERVICES
     CONTROLLERS --> MODELS
-    SERVICES --> DB
-    MODELS --> DB
+    SERVICES --> DATABASE
+    MODELS --> DATABASE
 ```
+
+---
+
+## 📊 Arquitectura de Datos: División por Capas y las 3 Tablas de Consultas
+
+La persistencia de datos está estructurada para optimizar tanto la integridad referencial como la velocidad de consulta analítica en dashboards de gran volumen:
+
+1. **Capa Curricular (Estructura Pedagógica - PDF GFPI-F-016):**
+   - Conformada por `proyectos_formativos`, `fases_proyecto`, `actividades_fase` y `fase_competencia_resultado`.
+   - Modela la **teoría formativa**: qué fases existen, qué actividades se ejecutan y qué resultados deben alcanzarse.
+2. **Capa Base Operativa (Entidades Maestras - Sofia Plus):**
+   - Conformada por `programas` (fichas matriculadas), `aprendices` (estudiantes y sus estados) y `funcionarios` (instructores).
+   - Es la base relacional sobre la cual se registran las matrículas y los responsables pedagógicos.
+3. **Las 3 Tablas Centrales de Consultas Analíticas (`competencias`, `resultados`, `juicios`):**
+   - Es el **motor analítico del sistema**, donde se registra el desempeño evaluativo real de cada aprendiz.
+   - **`competencias`**: Agrupa y clasifica las normas cursadas por ficha y aprendiz.
+   - **`resultados`**: Desglosa cada resultado individual con su código normalizado.
+   - **`juicios`**: Almacena el estado evaluativo (`APROBADO`, `POR EVALUAR`), la fecha exacta y el instructor que emitió el juicio.
+   - **Impacto en Consultas:** Los modelos `DashboardModel`, `RetiradosModel` y `JuiciosModel` ejecutan `JOINs` indexados sobre este trío para generar en milisegundos los KPIs globales, la Curva de Supervivencia 2025, la auditoría docente y el cruce con las fases curriculares.
 
 ---
 
