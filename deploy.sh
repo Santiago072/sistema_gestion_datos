@@ -29,8 +29,20 @@ docker compose up -d --build
 
 # 5. Aplicar migraciones de base de datos
 echo ""
-echo "[5/5] Aplicando migraciones de base de datos..."
-docker compose exec -T gestion_datos_db mysql -u sena_user -psena_password sena_juicios < sql/migracion_vps_actual.sql || echo "Nota: Revisa si la base de datos requiere credenciales personalizadas."
+echo "[5/5] Esperando a que MariaDB esté listo y aplicando migraciones..."
+for i in {1..20}; do
+  if docker compose exec -T gestion_datos_db sh -c 'mariadb-admin ping -h 127.0.0.1 --silent' 2>/dev/null; then
+    echo "  -> Base de datos lista para recibir consultas."
+    break
+  fi
+  echo "  -> Esperando a MariaDB... ($i/20)"
+  sleep 2
+done
+
+echo "  -> Ejecutando migraciones SQL..."
+docker compose exec -T gestion_datos_db sh -c 'mariadb -h 127.0.0.1 -u root -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE"' < sql/migracion_vps_actual.sql 2>/dev/null || \
+docker compose exec -T gestion_datos_db sh -c 'mariadb -h 127.0.0.1 -u "$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE"' < sql/migracion_vps_actual.sql 2>/dev/null || \
+echo "Nota: Si las credenciales son personalizadas, aplica la migración con: docker compose exec -i gestion_datos_db mysql -u root -p sena_juicios < sql/migracion_vps_actual.sql"
 
 echo ""
 echo "========================================"
