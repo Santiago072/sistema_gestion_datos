@@ -4,12 +4,13 @@ require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__, 3) . '/config/database.php';
 $db = getDB();
 
-// Programas con conteo de aprendices
+// Programas con conteo de aprendices — solo los que tienen al menos 1
 $programas = $db->query("
     SELECT p.id_ficha, p.nombre, COUNT(a.documento) AS total_aprendices
     FROM programas p
     LEFT JOIN aprendices a ON p.id_ficha = a.id_ficha
     GROUP BY p.id_ficha, p.nombre
+    HAVING total_aprendices > 0
     ORDER BY p.nombre
 ")->fetchAll();
 ?>
@@ -51,7 +52,7 @@ $programas = $db->query("
               <td><?= htmlspecialchars($p['nombre']) ?></td>
               <td><span class="badge badge-cyan"><?= $p['total_aprendices'] ?></span></td>
               <td style="text-align:right;">
-                <button onclick="eliminarFicha('<?= htmlspecialchars($p['id_ficha']) ?>', '<?= htmlspecialchars(addslashes($p['nombre'])) ?>')"
+                <button onclick="eliminarFicha('<?= htmlspecialchars($p['id_ficha']) ?>', '<?= htmlspecialchars(addslashes($p['nombre'])) ?>', this)"
                         class="btn" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:6px 14px;font-size:0.85rem;">
                   🗑 Eliminar Ficha
                 </button>
@@ -133,23 +134,35 @@ $programas = $db->query("
 
 <script>
 // ─── Eliminar ficha completa ───────────────────────────────
-function eliminarFicha(id_ficha, nombre) {
+function eliminarFicha(id_ficha, nombre, btn) {
     if (!confirm('¿Estás SEGURO de eliminar permanentemente el programa "' + nombre + '" (Ficha: ' + id_ficha + ')?\n\nSe borrarán TODOS sus aprendices, competencias y resultados. ESTO NO SE PUEDE DESHACER.')) return;
 
     const fd = new FormData();
     fd.append('id_ficha', id_ficha);
 
+    // Deshabilitar botón para evitar doble clic
+    if (btn) { btn.disabled = true; btn.textContent = 'Eliminando…'; }
+
     fetch((window.BASE_URL || '') + 'index.php?module=eliminacion&action=eliminar_programa', { method:'POST', body:fd })
         .then(r => r.json())
         .then(d => {
             if (d.success) {
-                alert('Programa eliminado correctamente.');
-                window.location.reload();
+                // Eliminar la fila del DOM inmediatamente sin reload
+                const row = btn ? btn.closest('tr') : document.querySelector(`tr[data-ficha="${id_ficha}"]`);
+                if (row) {
+                    row.style.transition = 'opacity 0.35s';
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 360);
+                }
             } else {
                 alert('Error: ' + (d.message || 'Error desconocido.'));
+                if (btn) { btn.disabled = false; btn.textContent = '🗑 Eliminar Ficha'; }
             }
         })
-        .catch(() => alert('Error de conexión al servidor.'));
+        .catch(() => {
+            alert('Error de conexión al servidor.');
+            if (btn) { btn.disabled = false; btn.textContent = '🗑 Eliminar Ficha'; }
+        });
 }
 
 // ─── Buscar aprendiz ───────────────────────────────────────
