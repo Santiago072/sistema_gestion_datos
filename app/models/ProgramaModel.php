@@ -52,7 +52,12 @@ class ProgramaModel extends BaseModel {
             $stmtA = $this->db->prepare($sqlAprendices);
             $stmtA->execute([':ficha' => $id_ficha]);
 
-            // 5. Eliminar la ficha de la tabla programas
+            // 5. Eliminar el historial de cortes de esta ficha
+            $sqlHistorial = "DELETE FROM historial_cortes_reportes WHERE id_ficha = :ficha";
+            $stmtH = $this->db->prepare($sqlHistorial);
+            $stmtH->execute([':ficha' => $id_ficha]);
+
+            // 6. Eliminar la ficha de la tabla programas
             // NOTA ARQUITECTÓNICA: Como el proyecto formativo ahora vive en `proyectos_formativos`,
             // la eliminación de la ficha o de sus aprendices NUNCA afecta ni borra el proyecto formativo,
             // sus fases, actividades ni competencias curriculares.

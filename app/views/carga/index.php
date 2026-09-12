@@ -20,10 +20,25 @@ require_once dirname(__DIR__, 3) . '/config/database.php';
     </div>
 
     <!-- Info archivo seleccionado -->
-    <div id="fileInfo" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(57,169,0,0.08);border:1px solid rgba(57,169,0,0.2);border-radius:8px;font-size:.85rem">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:1.4rem">📄</span>
-        <div><strong id="fileName">—</strong><br><span style="color:#7a8fa6" id="fileSize">—</span></div>
+    <div id="fileInfo" style="display:none;margin-top:12px;padding:14px 16px;background:rgba(57,169,0,0.06);border:1px solid rgba(57,169,0,0.25);border-radius:8px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:1.6rem">📄</span>
+        <div style="flex:1;min-width:0">
+          <strong id="fileName" style="font-size:0.92rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</strong>
+          <span style="color:#7a8fa6;font-size:0.8rem" id="fileSize">—</span>
+        </div>
+      </div>
+      <!-- Selector y confirmación de Fecha de Corte -->
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(57,169,0,0.18);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <label for="fechaCorteInput" style="font-size:0.85rem;color:var(--text);font-weight:700;display:flex;align-items:center;gap:6px">
+            <span>📅 Fecha de Corte del Reporte:</span>
+          </label>
+          <span style="font-size:0.75rem;color:#7a8fa6;display:block;margin-top:2px">Auto-detectada del nombre de archivo (puedes modificarla si lo requieres)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="date" id="fechaCorteInput" style="padding:7px 12px;border-radius:6px;border:1px solid rgba(57,169,0,0.45);background:var(--bg);color:var(--text);font-size:0.92rem;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+        </div>
       </div>
     </div>
 
@@ -98,12 +113,43 @@ require_once dirname(__DIR__, 3) . '/config/database.php';
 </div>
 
 <!-- Previsualización -->
-<div class="card fade-in stagger-3" id="previewCard" style="display:none">
+<div class="card fade-in stagger-3 mb-24" id="previewCard" style="display:none">
   <div class="section-header mb-12">
     <div class="section-title">👁 Previsualización (primeras 20 filas)</div>
     <span id="totalFilas" class="badge badge-cyan"></span>
   </div>
   <div class="table-wrap" id="previewWrap" style="max-height:360px;overflow-y:auto"></div>
+</div>
+
+<!-- Historial de Cortes Importados -->
+<div class="card fade-in stagger-3">
+  <div class="section-header mb-16" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="section-title mb-0" style="display:flex;align-items:center;gap:10px">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:20px;height:20px;color:#39A900"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Historial de Cortes de Juicios Importados
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="cargarHistorialCortes()" style="display:flex;align-items:center;gap:6px">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+      Actualizar Historial
+    </button>
+  </div>
+  <div class="table-wrap">
+    <table id="tablaHistorialCortes">
+      <thead>
+        <tr>
+          <th>Ficha / Programa</th>
+          <th>Fecha de Corte (Reporte)</th>
+          <th>Fecha y Hora de Subida</th>
+          <th>Archivo Original</th>
+          <th>Filas</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyHistorialCortes">
+        <tr><td colspan="6" style="text-align:center;color:#7a8fa6;padding:24px">Cargando historial de cortes...</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
@@ -135,9 +181,37 @@ function limpiarSubida() {
   btnSubir.disabled = false;
   document.getElementById('btnLimpiarUpload').style.display = 'none';
   document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('progBar').style.width = '0%';
+  document.getElementById('progPct').textContent = '0%';
+  document.getElementById('progLabel').textContent = 'Procesando...';
   document.getElementById('resultados').innerHTML = '';
   document.getElementById('previewCard').style.display = 'none';
   document.getElementById('previewWrap').innerHTML = '';
+}
+
+// Función para auto-detectar fecha del nombre del archivo (ej. 06042026, 07092026, 2026-09-07)
+function extraerFechaCorte(nombreArchivo) {
+  // Patrón DDMMAAAA (ej. 06042026 o 07092026)
+  const matchDDMM = nombreArchivo.match(/(\d{2})(\d{2})(\d{4})/);
+  if (matchDDMM) {
+    const dia = matchDDMM[1];
+    const mes = matchDDMM[2];
+    const ano = matchDDMM[3];
+    const d = parseInt(dia, 10);
+    const m = parseInt(mes, 10);
+    const y = parseInt(ano, 10);
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31 && y >= 2000 && y <= 2100) {
+      return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    }
+  }
+  // Patrón AAAA-MM-DD
+  const matchISO = nombreArchivo.match(/(\d{4})[-_](\d{2})[-_](\d{2})/);
+  if (matchISO) {
+    return `${matchISO[1]}-${matchISO[2]}-${matchISO[3]}`;
+  }
+  // Por defecto, fecha de hoy
+  const hoy = new Date();
+  return hoy.toISOString().split('T')[0];
 }
 
 function handleFile(file) {
@@ -149,6 +223,12 @@ function handleFile(file) {
   selectedFile = file;
   document.getElementById('fileName').textContent = file.name;
   document.getElementById('fileSize').textContent = formatBytes(file.size) + ' · ' + ext.toUpperCase();
+
+  // Auto-detectar y asignar fecha de corte
+  const fechaDetectada = extraerFechaCorte(file.name);
+  const fcInput = document.getElementById('fechaCorteInput');
+  if (fcInput) fcInput.value = fechaDetectada;
+
   document.getElementById('fileInfo').style.display = 'block';
   document.getElementById('btnSubir').style.display = 'flex';
 
@@ -161,7 +241,7 @@ function handleFile(file) {
     // Para xlsx mostramos aviso
     document.getElementById('previewCard').style.display = 'block';
     document.getElementById('totalFilas').textContent = 'Excel — previsualización disponible tras procesar';
-    document.getElementById('previewWrap').innerHTML = '<div class="alert alert-info"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg><div>Archivo Excel listo. Haz clic en <strong>"Procesar y Guardar"</strong> para cargarlo.</div></div>';
+    document.getElementById('previewWrap').innerHTML = '<div class="alert alert-info"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:18px;height:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg><div>Archivo Excel listo con fecha de corte detectada. Haz clic en <strong>"Procesar y Guardar"</strong> para cargarlo.</div></div>';
   }
 }
 
@@ -210,6 +290,10 @@ function subirArchivo() {
 
   const fd = new FormData();
   fd.append('archivo', selectedFile);
+  const fcVal = document.getElementById('fechaCorteInput') ? document.getElementById('fechaCorteInput').value : '';
+  if (fcVal) {
+    fd.append('fecha_corte', fcVal);
+  }
 
   fetch((window.BASE_URL || '') + 'index.php?module=carga&action=upload_excel', { method: 'POST', body: fd })
     .then(r => r.json())
@@ -236,11 +320,15 @@ function subirArchivo() {
       }
 
       const resHtml = `
-        <div class="alert ${alertCls}" style="margin-top:16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px">
+        <div class="alert ${alertCls}" style="margin-top:16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px">
           ${alertIcon}
-          <div>
-            <div style="font-size:0.95rem;font-weight:700">${d.message}</div>
-            <div style="font-size:0.8rem;opacity:0.85;margin-top:2px">Se procesaron <strong>${d.total_filas}</strong> filas del archivo.</div>
+          <div style="flex:1">
+            <div style="font-size:0.98rem;font-weight:700">${d.message}</div>
+            <div style="font-size:0.83rem;opacity:0.9;margin-top:4px;display:flex;flex-wrap:wrap;gap:14px">
+              <span>📅 <strong>Fecha de Corte:</strong> ${d.fecha_corte || '—'}</span>
+              <span>🕒 <strong>Subido al sistema:</strong> ${d.fecha_subida || '—'}</span>
+              <span>📄 <strong>Filas procesadas:</strong> ${d.total_filas}</span>
+            </div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px">
@@ -273,6 +361,8 @@ function subirArchivo() {
         ${d.errores && d.errores.length ? `<div class="alert alert-warning" style="margin-top:10px"><div><strong>${d.errores.length} advertencias:</strong><br>${erroresHtml}</div></div>` : ''}`;
 
       document.getElementById('resultados').innerHTML = resHtml;
+      // Actualizar la tabla de historial de cortes
+      cargarHistorialCortes();
     })
     .catch(e => {
       clearInterval(iv);
@@ -285,6 +375,55 @@ function showMsg(type, msg) {
   const map = { success: 'alert-success', error: 'alert-error', warning: 'alert-warning' };
   document.getElementById('resultados').innerHTML = `<div class="alert ${map[type]}">${msg}</div>`;
 }
+
+function cargarHistorialCortes() {
+  const tbody = document.getElementById('tbodyHistorialCortes');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7a8fa6;padding:20px">Consultando historial...</td></tr>';
+
+  fetch((window.BASE_URL || '') + 'index.php?module=carga&action=historial_cortes')
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok || !d.cortes || d.cortes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7a8fa6;padding:24px">No hay registros de cortes cargados aún en el sistema.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      d.cortes.forEach((c, idx) => {
+        const progTexto = c.id_ficha 
+          ? `<strong>${c.id_ficha}</strong> - ${c.programa_nombre || 'Sin nombre'}`
+          : '<span style="color:#7a8fa6">General / Múltiples</span>';
+
+        const esMasReciente = (idx === 0) 
+          ? '<span class="badge badge-green" style="font-size:0.7rem;margin-left:6px">ÚLTIMO CORTE</span>' 
+          : '';
+
+        html += `
+          <tr>
+            <td>${progTexto}</td>
+            <td>
+              <strong style="color:var(--primary)">${c.fecha_corte_formato || c.fecha_corte}</strong>
+              ${esMasReciente}
+            </td>
+            <td style="color:#7a8fa6;font-size:0.85rem">${c.fecha_subida_formato || c.fecha_subida}</td>
+            <td><code style="font-size:0.8rem;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px">${c.nombre_archivo}</code></td>
+            <td><strong>${(parseInt(c.total_filas) || 0).toLocaleString('es-CO')}</strong></td>
+            <td><span class="badge badge-cyan">${c.estado}</span></td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    })
+    .catch(err => {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:16px">Error al cargar historial: ${err.message}</td></tr>`;
+    });
+}
+
+// Cargar historial automáticamente al iniciar la vista
+document.addEventListener('DOMContentLoaded', () => {
+  cargarHistorialCortes();
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

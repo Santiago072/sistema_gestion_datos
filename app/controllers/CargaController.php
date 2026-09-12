@@ -47,6 +47,25 @@ class CargaController {
             jsonResponse(['error' => true, 'message' => 'No se pudo guardar el archivo temporal'], 500);
         }
 
+        // Detectar o recibir fecha de corte del reporte
+        $fechaCorte = trim($_POST['fecha_corte'] ?? '');
+        if (empty($fechaCorte)) {
+            // Extraer del nombre de archivo (ej. 07092026, 06042026, 2026-09-07)
+            if (preg_match('/(\d{2})(\d{2})(\d{4})/', $file['name'], $mF)) {
+                $dia = (int)$mF[1];
+                $mes = (int)$mF[2];
+                $ano = (int)$mF[3];
+                if (checkdate($mes, $dia, $ano)) {
+                    $fechaCorte = sprintf('%04d-%02d-%02d', $ano, $mes, $dia);
+                }
+            } elseif (preg_match('/(\d{4})[-_](\d{2})[-_](\d{2})/', $file['name'], $mF)) {
+                $fechaCorte = "{$mF[1]}-{$mF[2]}-{$mF[3]}";
+            }
+        }
+        if (empty($fechaCorte)) {
+            $fechaCorte = date('Y-m-d');
+        }
+
         try {
             if ($ext === 'xlsx' || $ext === 'xls') {
                 $adapter = new ExcelAdapter($ext);
@@ -480,6 +499,23 @@ class CargaController {
             }
 
             $db->commit();
+            $fechaSubida = date('Y-m-d H:i:s');
+
+            // Registrar en historial_cortes_reportes
+            try {
+                $nombreArchivoOriginal = $file['name'];
+                $totalFilasCount = count($allRows);
+                $stmtHist = $db->prepare("INSERT INTO historial_cortes_reportes (id_ficha, nombre_archivo, fecha_corte, fecha_subida, total_filas, estado) VALUES (?, ?, ?, ?, ?, 'exitoso')");
+                if (!empty($fichasKeys)) {
+                    foreach ($fichasKeys as $fk) {
+                        $stmtHist->execute([(int)$fk, $nombreArchivoOriginal, $fechaCorte, $fechaSubida, $totalFilasCount]);
+                    }
+                } else {
+                    $stmtHist->execute([null, $nombreArchivoOriginal, $fechaCorte, $fechaSubida, $totalFilasCount]);
+                }
+            } catch (Throwable $eHist) {
+                error_log("Error al registrar corte en historial: " . $eHist->getMessage());
+            }
 
             // Consultar las métricas consolidadas reales de las fichas afectadas
             $stmtFichaStats = $db->prepare("
@@ -547,6 +583,11 @@ class CargaController {
                 'fichas_actualizadas_count' => count($fichasAfectadas),
                 'total_aprendices_unicos'   => count($aprendicesVistos),
                 'juicios'                   => (int)($statsFicha['total_juicios'] ?? $cntJuicios),
+                'fecha_corte'               => date('d/m/Y', strtotime($fechaCorte)),
+                'fecha_corte_raw'           => $fechaCorte,
+                'fecha_subida'              => date('d/m/Y h:i:s a', strtotime($fechaSubida)),
+                'fecha_subida_raw'          => $fechaSubida,
+                'nombre_archivo'            => $nombreArchivoOriginal,
                 'columnas_detectadas'       => $cols,
                 'errores'                   => $errores
             ]);
@@ -558,5 +599,29 @@ class CargaController {
             @unlink($tmpFile);
             jsonResponse(['error' => true, 'message' => 'Error durante el procesamiento: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function ajaxHistorialCortes(): void {
+        verificar_rate_limit(60, 60, 'historial_cortes');
+        $idFicha = isset($_GET['id_ficha']) && $_GET['id_ficha'] !== '' ? (int)$_GET['id_ficha'] : null;
+        $params = [];
+        $sql = "SELECT h.id_corte, h.id_ficha, p.nombre as programa_nombre, h.nombre_archivo, 
+                       DATE_FORMAT(h.fecha_corte, '%d/%m/%Y') as fecha_corte_formato,
+                       h.fecha_corte,
+                       DATE_FORMAT(h.fecha_subida, '%d/%m/%Y %h:%i %p') as fecha_subida_formato,
+                       h.fecha_subida,
+                       h.total_filas, h.estado 
+                FROM historial_cortes_reportes h
+                LEFT JOIN programas p ON p.id_ficha = h.id_ficha";
+        if ($idFicha) {
+            $sql .= " WHERE h.id_ficha = ?";
+            $params[] = $idFicha;
+        }
+        $sql .= " ORDER BY h.fecha_corte DESC, h.fecha_subida DESC LIMIT 50";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $cortes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        jsonResponse(['ok' => true, 'cortes' => $cortes]);
     }
 }

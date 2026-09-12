@@ -165,21 +165,21 @@ CREATE TABLE `resultados` (
   CONSTRAINT `fk_resultados_id_juicio_juicios` FOREIGN KEY (`id_juicio`) REFERENCES `juicios` (`id_juicio`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=55144 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `trabajos_importacion`;
+DROP TABLE IF EXISTS `historial_cortes_reportes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `trabajos_importacion` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `tipo` varchar(50) NOT NULL COMMENT 'Ej: excel_aprendices, pdf_fases',
-  `ruta_archivo` varchar(255) NOT NULL,
-  `estado` enum('pendiente','procesando','completado','error') DEFAULT 'pendiente',
-  `progreso` int(11) DEFAULT 0,
-  `resultado` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`resultado`)),
-  `errores` text DEFAULT NULL,
-  `creado_en` timestamp NOT NULL DEFAULT current_timestamp(),
-  `actualizado_en` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `historial_cortes_reportes` (
+  `id_corte` int(11) NOT NULL AUTO_INCREMENT,
+  `id_ficha` int(11) DEFAULT NULL,
+  `nombre_archivo` varchar(255) NOT NULL,
+  `fecha_corte` date NOT NULL,
+  `fecha_subida` datetime DEFAULT current_timestamp(),
+  `total_filas` int(11) DEFAULT 0,
+  `estado` varchar(50) DEFAULT 'exitoso',
+  PRIMARY KEY (`id_corte`),
+  KEY `idx_hcr_ficha` (`id_ficha`),
+  KEY `idx_hcr_fecha_corte` (`fecha_corte`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `v_aprobacion_por_competencia`;
 /*!50001 DROP VIEW IF EXISTS `v_aprobacion_por_competencia`*/;

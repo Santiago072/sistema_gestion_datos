@@ -7,12 +7,13 @@ $programas = $db->query("SELECT id_ficha, nombre FROM programas ORDER BY nombre"
 ?>
 
 <!-- Filtro Global -->
-<div class="card mb-24 fade-in" style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:linear-gradient(90deg, rgba(57,169,0,0.05), transparent);border-left:4px solid #39A900">
+<div class="card mb-24 fade-in" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding:16px 24px;background:linear-gradient(90deg, rgba(57,169,0,0.05), transparent);border-left:4px solid #39A900">
   <div class="section-title mb-0" style="display:flex;align-items:center;gap:12px">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:24px;height:24px;color:#39A900"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/></svg>
     Dashboard de Seguimiento
   </div>
-  <div>
+  <div style="display:flex;align-items:center;gap:12px;white-space:nowrap;flex-shrink:0">
+    <label for="filtroProgramaGlobal" style="font-size:0.88rem;color:var(--text);font-weight:600;white-space:nowrap;margin:0">Programa / Ficha:</label>
     <select id="filtroProgramaGlobal" onchange="cargarDashboard(); aplicarFiltro(1);" style="padding:8px 12px;border-radius:6px;border:1px solid var(--card-border);background:var(--bg);color:var(--text);min-width:300px;font-size:0.9rem">
       <option value="">Todos los programas</option>
       <?php foreach($programas as $p): ?>
@@ -177,6 +178,32 @@ function cargarDashboard() {
         (function step(n){const p=Math.min((n-s)/1200,1),e=1-Math.pow(1-p,3);
           el.textContent=Math.round(t*e).toLocaleString('es-CO');if(p<1)requestAnimationFrame(step);})(s);
       });
+
+      // ── Actualizar Badge del Último Corte en el Topbar ──
+      // REGLA: Si está en "Todos los programas" (prog vacío), el corte NO se muestra.
+      // Solo se muestra cuando el usuario selecciona una ficha/programa específico.
+      const topbarCorte = document.getElementById('topbarCorteInfo');
+      const topbarFecha = document.getElementById('topbarFechaCorte');
+      const topbarSubida = document.getElementById('topbarFechaSubida');
+      const topbarArch = document.getElementById('topbarNombreArchivo');
+
+      if (!prog || !d.ultimo_corte || !d.ultimo_corte.fecha_corte) {
+        if (topbarCorte) topbarCorte.style.display = 'none';
+      } else {
+        const c = d.ultimo_corte;
+        let fCorteTxt = c.fecha_corte_formato || c.fecha_corte;
+        if (fCorteTxt && fCorteTxt.includes('-')) {
+          const parts = fCorteTxt.split('-');
+          fCorteTxt = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        if (topbarFecha) topbarFecha.textContent = fCorteTxt || '—';
+        if (topbarSubida) topbarSubida.textContent = c.fecha_subida_formato || (c.fecha_subida ? new Date(c.fecha_subida).toLocaleString('es-CO') : '—');
+        if (topbarArch) {
+          topbarArch.textContent = c.nombre_archivo || 'Reporte';
+          topbarArch.title = c.nombre_archivo || '';
+        }
+        if (topbarCorte) topbarCorte.style.display = 'inline-flex';
+      }
     });
     // ── Formación chart ──
     fetch('<?= BASE_URL ?>index.php?module=dashboard&action=aprendices_formacion' + qs)

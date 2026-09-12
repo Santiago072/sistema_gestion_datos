@@ -90,8 +90,22 @@ $icons = [
   </aside>
 
   <main class="main-content">
-    <div class="topbar fade-in">
-      <h1><?= htmlspecialchars($title) ?></h1>
+    <div class="topbar fade-in" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <h1 style="margin:0"><?= htmlspecialchars($title) ?></h1>
+        <!-- Badge Superior de Corte Activo (Solo visible cuando hay información cargada) -->
+        <div id="topbarCorteInfo" style="display:none;align-items:center;gap:10px;background:linear-gradient(135deg, rgba(57,169,0,0.12), rgba(57,169,0,0.04));border:1px solid rgba(57,169,0,0.3);padding:4px 14px;border-radius:20px;font-size:0.82rem">
+          <span style="display:inline-flex;align-items:center;gap:5px;font-weight:700;color:#39A900">
+            <span>📅</span> Corte: <span id="topbarFechaCorte">—</span>
+          </span>
+          <span style="opacity:0.3">|</span>
+          <span style="color:#7a8fa6;font-size:0.75rem;display:inline-flex;align-items:center;gap:4px">
+            <span>🕒</span> Subido: <strong id="topbarFechaSubida" style="color:var(--text)">—</strong>
+          </span>
+          <span style="opacity:0.3">|</span>
+          <span id="topbarNombreArchivo" style="color:var(--primary);font-size:0.78rem;font-family:monospace;font-weight:600">—</span>
+        </div>
+      </div>
       <div class="topbar-right">
         <button id="themeToggleBtn" class="btn btn-secondary btn-icon" title="Cambiar Tema" aria-label="Cambiar Tema">
           <svg id="themeIconSun" style="display:none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>

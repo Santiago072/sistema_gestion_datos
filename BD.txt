@@ -175,19 +175,19 @@ CREATE TABLE IF NOT EXISTS competencias (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ==========================================================
--- 11. TRABAJOS DE IMPORTACIÓN
---     Trazabilidad de importaciones en segundo plano (Excel / PDF).
+-- 11. HISTORIAL DE CORTES DE REPORTES
+--     Trazabilidad de fechas de corte y cargas de archivos Excel.
 -- ==========================================================
-CREATE TABLE IF NOT EXISTS trabajos_importacion (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    tipo VARCHAR(50) NOT NULL COMMENT 'excel_aprendices, pdf_fases',
-    ruta_archivo VARCHAR(255) NOT NULL,
-    estado ENUM('pendiente', 'procesando', 'completado', 'error') DEFAULT 'pendiente',
-    progreso INT DEFAULT 0,
-    resultado LONGTEXT DEFAULT NULL CHECK (json_valid(resultado)),
-    errores TEXT DEFAULT NULL,
-    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS historial_cortes_reportes (
+    id_corte INT AUTO_INCREMENT PRIMARY KEY,
+    id_ficha INT DEFAULT NULL,
+    nombre_archivo VARCHAR(255) NOT NULL,
+    fecha_corte DATE NOT NULL,
+    fecha_subida DATETIME DEFAULT CURRENT_TIMESTAMP,
+    total_filas INT DEFAULT 0,
+    estado VARCHAR(50) DEFAULT 'exitoso',
+    INDEX idx_hcr_ficha (id_ficha),
+    INDEX idx_hcr_fecha_corte (fecha_corte)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ==========================================================

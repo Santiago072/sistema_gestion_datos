@@ -130,6 +130,10 @@ switch ($module) {
             case 'upload':
                 $ctrl->ajaxUploadExcel();
                 break;
+            case 'historial_cortes':
+            case 'cortes':
+                $ctrl->ajaxHistorialCortes();
+                break;
             case 'index':
             default:
                 $ctrl->index();

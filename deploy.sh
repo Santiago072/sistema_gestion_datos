@@ -24,8 +24,13 @@ git reset --hard origin/master
 
 # 4. Reconstruir y levantar contenedores
 echo ""
-echo "[4/4] Reconstruyendo y levantando contenedores Docker..."
+echo "[4/5] Reconstruyendo y levantando contenedores Docker..."
 docker compose up -d --build
+
+# 5. Aplicar migraciones de base de datos
+echo ""
+echo "[5/5] Aplicando migraciones de base de datos..."
+docker compose exec -T gestion_datos_db mysql -u sena_user -psena_password sena_juicios < sql/migracion_vps_actual.sql || echo "Nota: Revisa si la base de datos requiere credenciales personalizadas."
 
 echo ""
 echo "========================================"

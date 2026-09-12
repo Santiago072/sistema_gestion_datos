@@ -239,6 +239,18 @@ Estas tres tablas constituyen el **corazón evaluativo y analítico del sistema*
 - **Campos:** `documento` (PK, INT) y `nombre` (VARCHAR(255)).
 - **Función en Consultas:** Vincula cada juicio evaluativo con el nombre y cédula del docente responsable.
 
+### 9. `historial_cortes_reportes`
+- **Propósito:** Registro histórico y trazabilidad de los cortes mensuales cargados mediante archivos Excel/CSV de Sofia Plus.
+- **Campos:**
+  - `id_corte` (INT, PK, AUTO_INCREMENT): Identificador del corte.
+  - `id_ficha` (INT, FK, NULL): Ficha de formación a la que pertenece el reporte (o null si es global).
+  - `nombre_archivo` (VARCHAR(255)): Nombre del archivo importado (ej: `Reporte de Juicios Evaluativos - 06042026.xlsx`).
+  - `fecha_corte` (DATE): Fecha de corte pedagógico extraída del nombre o configurada manualmente (ej: `2026-04-06`).
+  - `fecha_subida` (DATETIME): Estampa temporal exacta de la carga en zona horaria oficial `America/Bogota` (UTC-5).
+  - `total_filas` (INT): Cantidad de filas procesadas del archivo.
+  - `estado` (VARCHAR(50)): Estado del corte (`exitoso`, etc.).
+- **Función en el Dashboard:** Cuando el usuario selecciona una ficha específica en el filtro superior, se proyecta una píldora informativa destacada en la cabecera con la fecha de corte, la fecha de subida y el nombre completo del archivo.
+
 ---
 
 ## 🐍 4. Motor de Extracción de PDFs: `extract_pdf.py`
@@ -264,7 +276,7 @@ El script ubicado en `app/controllers/scripts/extract_pdf.py` automatiza la inte
 
 | Controlador | Acción | Método | Parámetros | Descripción |
 | :--- | :--- | :--- | :--- | :--- |
-| `DashboardController` | `kpis` | GET | `id_ficha` (opcional) | Retorna contadores agregados de aprendices activos, aprobados y pendientes. |
+| `DashboardController` | `kpis` | GET | `id_ficha` (opcional) | Retorna contadores agregados de aprendices activos, aprobados y pendientes, junto al último corte si hay ficha seleccionada. |
 | `DashboardController` | `retirados_competencia` | GET | `id_ficha` | Curva de supervivencia y competencias con mayor deserción en el año. |
 | `DashboardController` | `auditoria_funcionarios` | GET | `id_ficha` | Totales evaluados por cada instructor y fechas de primer/último registro. |
 | `DashboardController` | `filtro_avanzado` | GET | Criterios múltiples | Consulta paginada multicriterio con opción de exportación directa a CSV. |
@@ -272,5 +284,22 @@ El script ubicado en `app/controllers/scripts/extract_pdf.py` automatiza la inte
 | `FasesController` | `guardar_pdf` | POST | JSON del proyecto | Persiste el proyecto formativo, sus fases, actividades y resultados en la BD. |
 | `FasesController` | `vincular_ficha` | POST | `id_ficha`, `id_proyecto` | Asocia una ficha de formación existente a un proyecto curricular matriz. |
 | `FasesController` | `cumplimiento_fases` | GET | `id_ficha` | Porcentaje de avance y cumplimiento de juicios evaluativos por fase. |
-| `CargaController` | `upload` | POST | Archivo `file` | Procesa el archivo de Sofia Plus en bloques transaccionales de 500 filas. |
+| `CargaController` | `upload` | POST | Archivo `file` | Procesa el archivo de Sofia Plus en bloques transaccionales de 500 filas, fusionando cortes sin retrocesos y registrando la fecha de corte. |
+| `CargaController` | `historial_cortes` | GET | `id_ficha` (opcional) | Retorna el historial cronológico de cortes importados con su fecha y archivo. |
+
+---
+
+## 🚀 6. Despliegue en Servidor VPS
+
+El despliegue está completamente automatizado a través del script `deploy.sh`:
+
+```bash
+bash deploy.sh
+```
+
+### Acciones que realiza automáticamente:
+1. Ajusta los permisos locales del usuario en el servidor.
+2. Descarga los últimos cambios de la rama `master` en GitHub (`git fetch` y `git reset --hard origin/master`).
+3. Reconstruye y levanta los contenedores Docker (`docker compose up -d --build`).
+4. **Aplica las migraciones de base de datos** (`sql/migracion_vps_actual.sql`), asegurando que las nuevas tablas (como `historial_cortes_reportes` y `proyectos_formativos`) y columnas queden creadas y actualizadas sin intervención manual.
 
