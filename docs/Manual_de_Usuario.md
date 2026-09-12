@@ -27,14 +27,18 @@ La barra superior permite acceder rápidamente a todos los módulos del sistema:
 
 ---
 
-## 🗺️ 3. Módulo de Fases Formativas y Carga de PDF
+## 🗺️ 3. Módulo de Proyectos Formativos y Carga de PDF (GFPI-F-016)
 
-1. **Pestaña Proyectos:** Permite visualizar los datos básicos del proyecto curricular (Centro, Regional, Duración) y el resumen de actividades por fase.
-2. **Pestaña Fases y Actividades:** Explora el árbol completo de Fases (Análisis, Planeación, Ejecución, Evaluación), sus actividades asociadas y la lista de competencias y resultados vinculados.
+1. **Pestaña Proyecto Formativo:**
+   - Visualiza la ficha técnica completa del proyecto (Centro de Formación, Regional, Código de Proyecto SOFIA, Código de Programa, Duración en meses y total de resultados proyectados).
+   - Gestiona la **Vinculación de Fichas**: asocia una o más fichas de formación al proyecto matriz para heredar de inmediato toda su malla curricular.
+2. **Pestaña Fases y Actividades:**
+   - Explora el árbol curricular completo desglosado en sus cuatro fases canónicas (**Análisis, Planeación, Ejecución y Evaluación**).
+   - Consulta el avance de cumplimiento porcentual por fase y la relación de actividades con sus normas de competencia y resultados de aprendizaje.
 3. **Pestaña Carga PDF:**
-   - Selecciona el programa/ficha al que corresponde el proyecto.
-   - Arrastra o selecciona el archivo PDF oficial del formato **GFPI-F-016**.
-   - Haz clic en **Procesar y Guardar**. El sistema extraerá automáticamente las fases y cruzará los resultados con el reporte de Sofia Plus.
+   - **Subida Independiente:** Ya no necesitas tener una ficha creada de antemano. Arrastra o selecciona directamente el archivo PDF del formato oficial **GFPI-F-016**.
+   - Haz clic en **Procesar PDF**: el sistema ejecutará el motor en Python para analizar la estructura, deduplicar resultados y generar una vista previa con el resumen de fases, competencias y resultados detectados.
+   - Revisa la vista previa y haz clic en **Guardar en Base de Datos**. El proyecto quedará almacenado de forma global y listo para ser vinculado a las fichas que desees.
 
 ---
 

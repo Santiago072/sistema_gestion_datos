@@ -23,6 +23,7 @@ class FasesController {
     }
 
     public function index(): void {
+        $proyectos = $this->proyectoModel->getAll();
         $programas = $this->programaModel->getAll();
         require dirname(__DIR__) . '/views/fases/index.php';
     }
@@ -65,14 +66,36 @@ class FasesController {
 
                 case 'list_fases':
                     $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
-                    jsonResponse($this->fasesModel->listFases($idFicha));
+                    $idProyecto = !empty($_GET['id_proyecto']) ? (int)$_GET['id_proyecto'] : null;
+                    jsonResponse($this->fasesModel->listFases($idFicha, $idProyecto));
                     break;
 
                 case 'list_actividades':
                     $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
+                    $idProyecto = !empty($_GET['id_proyecto']) ? (int)$_GET['id_proyecto'] : null;
                     $idFase = !empty($_GET['id_fase']) ? (int)$_GET['id_fase'] : null;
                     $nombreFase = $_GET['nombre_fase'] ?? null;
-                    jsonResponse($this->fasesModel->listActividades($idFase, $nombreFase, $idFicha));
+                    jsonResponse($this->fasesModel->listActividades($idFase, $nombreFase, $idFicha, $idProyecto));
+                    break;
+
+                case 'get_fichas_proyecto':
+                    $idProyecto = !empty($_GET['id_proyecto']) ? (int)$_GET['id_proyecto'] : null;
+                    if ($idProyecto) {
+                        jsonResponse($this->proyectoModel->getFichasAsociadas($idProyecto));
+                    } else {
+                        jsonResponse([]);
+                    }
+                    break;
+
+                case 'list_fichas_disponibles':
+                    // Fichas registradas que aún no tienen proyecto asignado o todas las fichas
+                    $st = $this->db->query("
+                        SELECT p.id_ficha, p.nombre, p.id_proyecto,
+                               (SELECT COUNT(*) FROM aprendices a WHERE a.id_ficha = p.id_ficha) AS total_aprendices
+                        FROM programas p
+                        ORDER BY p.nombre ASC
+                    ");
+                    jsonResponse($st->fetchAll(PDO::FETCH_ASSOC));
                     break;
 
                 case 'create_fase':

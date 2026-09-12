@@ -36,9 +36,10 @@ Desarrollado en PHP nativo 8.2 bajo una arquitectura **MVC profesional**, con se
 * **Tabla de Retiros de 7 Columnas:** Cuadre perfecto entre programa, competencia, fase SENA, fecha de salida, cantidad, aprendices e instructores.
 
 ### 🗺️ 2. Fases Formativas e Integración Curricular (PDF GFPI-F-016)
-* **Extracción Inteligente:** Parser en Python (`pdfplumber`) que extrae fases (Análisis, Planeación, Ejecución, Evaluación), actividades de proyecto y códigos de resultados.
-* **Línea de Tiempo Dinámica:** Monitoreo del porcentaje de cumplimiento comparando los resultados requeridos por el PDF vs los juicios aprobados en Sofia Plus.
-* **Cruce Automático sin N/A:** Asociación jerárquica por código de resultado (`codigo_resultado`) y orden numérico de fase.
+* **Gestión de Proyectos Desacoplada (Modelo v4):** Los proyectos formativos se cargan y almacenan de forma independiente a las fichas. Un mismo proyecto curricular puede ser reutilizado y vinculado a múltiples fichas o cohortes.
+* **Extracción Inteligente de PDF:** Parser en Python (`pdfplumber`) optimizado que procesa proyectos curriculares complejos, deduplica automáticamente resultados, maneja celdas combinadas y detecta las fases canónicas (`ANÁLISIS`, `PLANEACIÓN`, `EJECUCIÓN`, `EVALUACIÓN`).
+* **Línea de Tiempo Dinámica y Cumplimiento:** Monitoreo del avance porcentual comparando los resultados requeridos por el diseño curricular vs los juicios evaluativos emitidos en Sofia Plus.
+* **Cruce Automático de Malla:** Asociación jerárquica por código de resultado (`codigo_resultado`) y asignación secuencial a cada fase y actividad.
 
 ### 📥 3. Carga Masiva y Procesamiento por Lotes
 * **Procesamiento de 500 Filas por Bloque:** Importa reportes `.xlsx`, `.xls` y `.csv` de gran tamaño sin exceder los límites de memoria del servidor.
@@ -103,7 +104,7 @@ graph TB
    ```bash
    git clone https://github.com/Santiago072/sistema_gestion_datos.git
    ```
-2. Importa el esquema de base de datos desde [`sql/init.sql`](sql/init.sql) en tu gestor MySQL (base de datos `sena_juicios`).
+2. Importa el esquema de base de datos desde [`BD.txt`](BD.txt) en tu gestor MySQL (base de datos `sena_juicios`).
 3. Configura tus credenciales en [`config/database.php`](config/database.php).
 4. Abre tu navegador e ingresa a `http://localhost/sistema_gestion_datos`.
 

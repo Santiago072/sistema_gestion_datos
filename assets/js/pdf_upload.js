@@ -45,9 +45,6 @@ function procesarPdf() {
   const file = fileInput.files[0];
   if (!file) { showPdfMsg('error', 'Primero selecciona un archivo PDF'); return; }
 
-  const prog = document.getElementById('pdfPrograma').value;
-  if (!prog) { showPdfMsg('warning', '⚠ Selecciona un programa de formación antes de procesar el PDF'); return; }
-
   const fd = new FormData();
   fd.append('pdf', file);
 
@@ -159,13 +156,11 @@ function renderPreview(d) {
 
 function importarDatos() {
   if (!pdfData) { showPdfMsg('error', 'Primero procesa un PDF'); return; }
-  const idFicha = document.getElementById('pdfPrograma').value;
-  if (!idFicha) { showPdfMsg('warning', '⚠ Selecciona un programa de formación'); return; }
   if (!confirm('¿Confirmas la importación de los datos detectados a la base de datos?')) return;
 
   const mapped = pdfData.datos_mapeados;
   const payload = {
-    id_ficha: idFicha,
+    id_ficha: null,
     informacion_basica: pdfData.datos_extraidos.informacion_basica || {},
     fases: mapped.fases,
     actividades: mapped.actividades,
@@ -198,18 +193,26 @@ function importarDatos() {
         detHtml += '</div>';
         document.getElementById('pdfMsg').innerHTML += detHtml;
         
-        // Sincronizar programa global
-        const globalSel = document.getElementById('globalPrograma');
-        if (globalSel) {
-          globalSel.value = idFicha;
-        }
-
-        // Recargar datos y refrescar vista de proyecto inmediatamente
+        // Sincronizar proyecto global
         fetch((window.BASE_URL || '') + 'index.php?module=fases&action=crud&subaction=list_proyectos')
           .then(r => r.json())
           .then(proys => {
             if (typeof proyectosData !== 'undefined') proyectosData = proys || [];
-            if (typeof seleccionarProyecto === 'function') seleccionarProyecto(idFicha);
+            
+            const idProy = d.id_proyecto || (proyectosData[0]?.id_proyecto || '');
+
+            const globalProy = document.getElementById('globalProyecto');
+            if (globalProy) {
+              globalProy.innerHTML = '<option value="">— Seleccionar Proyecto Formativo —</option>' +
+                proyectosData.map(p => {
+                  const nom = p.nombre || p.nombre_proyecto || 'Proyecto Formativo';
+                  const cod = p.codigo_programa_sofia ? ` (Código: ${p.codigo_programa_sofia})` : '';
+                  return `<option value="${p.id_proyecto}">${nom}${cod}</option>`;
+                }).join('');
+              globalProy.value = idProy;
+            }
+
+            if (typeof seleccionarProyecto === 'function' && idProy) seleccionarProyecto(idProy);
             if (typeof cargarFases === 'function') cargarFases();
           });
         
@@ -232,7 +235,6 @@ function importarDatos() {
 function limpiarPdf() {
   pdfData = null;
   fileInput.value = '';
-  document.getElementById('pdfPrograma').value = '';
   document.getElementById('pdfFileInfo').style.display = 'none';
   document.getElementById('pdfPreview').style.display = 'none';
   document.getElementById('btnProcesar').style.display = 'none';

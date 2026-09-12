@@ -82,7 +82,7 @@ $icons = [
       <?= navItem(BASE_URL . '?module=eliminacion',     'Eliminar Programas',     $icons['eliminar'],  'eliminacion',     $current_module) ?>
       <div class="nav-label">Fases Formativas</div>
       <?= navItem(BASE_URL . '?module=fases',           'Proyectos y Fases',      $icons['fases'],     'fases',           $current_module) ?>
-      <?= navItem(BASE_URL . '?module=dashboard_fases', 'Dashboard de Fases',     $icons['dashboard'], 'dashboard_fases', $current_module) ?>
+      <?= navItem(BASE_URL . '?module=dashboard_fases', 'Dashboard de Fases',     $icons['dfases'],    'dashboard_fases', $current_module) ?>
     </nav>
     <div class="sidebar-footer">
       SENA &copy; <?= date('Y') ?> — Sistema Evaluativo

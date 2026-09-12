@@ -308,11 +308,21 @@ def extract_table_from_pdf(pdf_path: str) -> dict:
         if act_id in best_act_names:
             reg["actividad"] = best_act_names[act_id]
             
+        # Descartar filas vacías o fantasma sin resultado ni competencia
+        res_limpio = (reg["resultado_codigo"] or reg["resultado_nombre"] or "").strip()
+        comp_limpia = (reg["competencia_codigo"] or reg["competencia"] or "").strip()
+        if not res_limpio and not comp_limpia:
+            continue
+
+        # Clave precisa para deduplicación: si hay código usamos código, si no nombre normalizado
+        res_ident = reg["resultado_codigo"] if reg["resultado_codigo"] else re.sub(r"\s+", " ", reg["resultado_nombre"]).strip().lower()
+        comp_ident = reg["competencia_codigo"] if reg["competencia_codigo"] else re.sub(r"\s+", " ", reg["competencia"]).strip().lower()
+
         key = (
             reg["fase"],
             act_id,
-            reg["resultado_codigo"],
-            reg["competencia_codigo"],
+            res_ident,
+            comp_ident,
         )
         if key not in seen and (reg["actividad"] or reg["resultado_nombre"]):
             seen.add(key)

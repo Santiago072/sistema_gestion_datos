@@ -31,7 +31,8 @@ class RetiradosModel extends BaseModel {
                     FROM fase_competencia_resultado fcr2
                     JOIN actividades_fase af2 ON fcr2.id_actividad = af2.id_actividad
                     JOIN fases_proyecto fp2 ON af2.id_fase = fp2.id_fase
-                    WHERE (fcr2.id_proyecto = p.id_proyecto OR fcr2.id_ficha = p.id_ficha)
+                    WHERE p.id_proyecto IS NOT NULL 
+                      AND fcr2.id_proyecto = p.id_proyecto
                       AND (
                           (r.codigo IS NOT NULL AND r.codigo != '' AND fcr2.codigo_resultado = r.codigo)
                           OR (fcr2.codigo_competencia IS NOT NULL AND fcr2.codigo_competencia != '' AND (c.codigo = fcr2.codigo_competencia OR c.nombre LIKE CONCAT('%', fcr2.codigo_competencia, '%')))
@@ -95,7 +96,10 @@ class RetiradosModel extends BaseModel {
             JOIN resultados r ON c.id_resultado = r.id_resultado 
             JOIN juicios j ON r.id_juicio = j.id_juicio 
             LEFT JOIN funcionarios f ON j.id_funcionario = f.documento
-            LEFT JOIN fase_competencia_resultado fcr ON fcr.id_ficha = :ficha AND fcr.codigo_resultado = r.codigo
+            LEFT JOIN programas prog ON prog.id_ficha = :ficha
+            LEFT JOIN fase_competencia_resultado fcr ON prog.id_proyecto IS NOT NULL 
+                AND fcr.id_proyecto = prog.id_proyecto 
+                AND fcr.codigo_resultado = r.codigo
             LEFT JOIN actividades_fase af ON fcr.id_actividad = af.id_actividad
             LEFT JOIN fases_proyecto fp ON af.id_fase = fp.id_fase
             WHERE c.id_aprendiz = :doc AND j.tipo_juicio = 'Aprobado'

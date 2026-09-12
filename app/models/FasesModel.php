@@ -20,9 +20,8 @@ class FasesModel extends BaseModel {
             $where = ' WHERE fp.id_proyecto = :id_proy ';
             $params[':id_proy'] = $idProy;
         } elseif ($idFicha) {
-            $where = ' WHERE (fp.id_ficha = :id_ficha OR fp.id_proyecto = (SELECT id_proyecto FROM programas WHERE id_ficha = :id_ficha2)) ';
-            $params[':id_ficha'] = $idFicha;
-            $params[':id_ficha2'] = $idFicha;
+            // Si la ficha no tiene proyecto asignado, no debe heredar fases de proyectos ajenos
+            return [];
         }
 
         $sql = "SELECT fcr.id, fp.nombre_fase, af.id_actividad, af.nombre AS actividad,
@@ -42,17 +41,11 @@ class FasesModel extends BaseModel {
 
     public function listFases(?int $idFicha, ?int $idProyecto = null): array {
         $idProy = $this->resolveProyectoId($idFicha, $idProyecto);
-        $params = [];
-        if ($idProy) {
-            $params[':id_proy'] = $idProy;
-            $sql = "SELECT * FROM fases_proyecto WHERE id_proyecto = :id_proy ORDER BY orden";
-        } elseif ($idFicha) {
-            $params[':id_ficha'] = $idFicha;
-            $sql = "SELECT * FROM fases_proyecto WHERE id_ficha = :id_ficha ORDER BY orden";
-        } else {
-            $sql = "SELECT MIN(id_fase) AS id_fase, nombre_fase, MIN(descripcion) AS descripcion, MIN(orden) AS orden, NULL AS id_ficha, NULL AS id_proyecto 
-                    FROM fases_proyecto GROUP BY nombre_fase ORDER BY MIN(orden)";
+        if (!$idProy) {
+            return [];
         }
+        $params = [':id_proy' => $idProy];
+        $sql = "SELECT * FROM fases_proyecto WHERE id_proyecto = :id_proy ORDER BY orden";
         $st = $this->db->prepare($sql);
         $st->execute($params);
         return $st->fetchAll();
@@ -60,25 +53,14 @@ class FasesModel extends BaseModel {
 
     public function listActividades(?int $idFase, ?string $nombreFase, ?int $idFicha, ?int $idProyecto = null): array {
         $idProy = $this->resolveProyectoId($idFicha, $idProyecto);
-        $params = [];
-        if ($idProy) {
-            $params[':f'] = $idFase ?? 0;
-            $params[':p'] = $idProy;
-            $sql = "SELECT * FROM actividades_fase WHERE id_fase = :f AND id_proyecto = :p ORDER BY nombre";
-        } elseif ($idFicha) {
-            $params[':f'] = $idFase ?? 0;
-            $params[':id_ficha'] = $idFicha;
-            $sql = "SELECT * FROM actividades_fase WHERE id_fase = :f AND (id_ficha = :id_ficha OR id_proyecto = (SELECT id_proyecto FROM programas WHERE id_ficha = :id_ficha2)) ORDER BY nombre";
-            $params[':id_ficha2'] = $idFicha;
-        } else {
-            $params[':n'] = $nombreFase ?? '';
-            $sql = "SELECT MIN(af.id_actividad) AS id_actividad, af.nombre, MIN(af.descripcion) AS descripcion, MIN(af.id_fase) AS id_fase, NULL AS id_ficha, NULL AS id_proyecto 
-                    FROM actividades_fase af 
-                    JOIN fases_proyecto fp ON fp.id_fase = af.id_fase 
-                    WHERE fp.nombre_fase = :n 
-                    GROUP BY af.nombre 
-                    ORDER BY af.nombre";
+        if (!$idProy || !$idFase) {
+            return [];
         }
+        $params = [
+            ':f' => $idFase,
+            ':p' => $idProy,
+        ];
+        $sql = "SELECT * FROM actividades_fase WHERE id_fase = :f AND id_proyecto = :p ORDER BY nombre";
         $st = $this->db->prepare($sql);
         $st->execute($params);
         return $st->fetchAll();

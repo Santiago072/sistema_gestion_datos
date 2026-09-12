@@ -24,7 +24,13 @@ class ProyectoModel extends BaseModel {
     }
 
     public function getFichasAsociadas(int $idProyecto): array {
-        $st = $this->db->prepare("SELECT id_ficha, nombre FROM programas WHERE id_proyecto = ? ORDER BY nombre");
+        $st = $this->db->prepare("
+            SELECT p.id_ficha, p.nombre, p.id_proyecto,
+                   (SELECT COUNT(*) FROM aprendices a WHERE a.id_ficha = p.id_ficha) AS total_aprendices
+            FROM programas p 
+            WHERE p.id_proyecto = ? 
+            ORDER BY p.nombre
+        ");
         $st->execute([$idProyecto]);
         return $st->fetchAll(PDO::FETCH_ASSOC);
     }
