@@ -1,0 +1,238 @@
+-- ==========================================================
+-- BASE DE DATOS: sena_juicios (Sistema de Gestión de Datos)
+-- ==========================================================
+CREATE DATABASE IF NOT EXISTS sena_juicios CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE sena_juicios;
+
+-- ==========================================================
+-- 1. PROYECTOS FORMATIVOS (PDF Curricular GFPI-F-016)
+--    Almacena los proyectos de forma independiente a las fichas.
+--    Permite que un proyecto se reutilice en múltiples fichas.
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS proyectos_formativos (
+    id_proyecto INT AUTO_INCREMENT PRIMARY KEY,
+    codigo_programa_sofia VARCHAR(20) DEFAULT NULL,
+    nombre_programa VARCHAR(255) DEFAULT NULL,
+    nombre_proyecto TEXT NOT NULL,
+    centro_formacion VARCHAR(255) DEFAULT NULL,
+    regional VARCHAR(100) DEFAULT NULL,
+    tiempo_estimado_meses INT DEFAULT NULL,
+    total_resultados INT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_pf_codigo_sofia (codigo_programa_sofia)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================================
+-- 2. PROGRAMAS / FICHAS
+--    Fichas formativas matriculadas en el sistema.
+--    id_proyecto enlaza la ficha a su Proyecto Formativo (opcional).
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS programas (
+    id_ficha INT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    id_proyecto INT DEFAULT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_programas_proyecto (id_proyecto),
+    CONSTRAINT fk_programas_proyecto FOREIGN KEY (id_proyecto) 
+        REFERENCES proyectos_formativos (id_proyecto) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================================
+-- 3. FASES DEL PROYECTO
+--    Fases curriculares (Análisis, Planeación, Ejecución, Evaluación).
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS fases_proyecto (
+    id_fase INT AUTO_INCREMENT PRIMARY KEY,
+    id_proyecto INT DEFAULT NULL,
+    nombre_fase VARCHAR(255) NOT NULL,
+    orden INT NOT NULL,
+    descripcion TEXT DEFAULT NULL,
+    id_ficha INT DEFAULT NULL,
+    INDEX idx_fases_proyecto_id (id_proyecto),
+    INDEX idx_fases_ficha (id_ficha),
+    CONSTRAINT fk_fases_proyecto FOREIGN KEY (id_proyecto) 
+        REFERENCES proyectos_formativos (id_proyecto) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================================
+-- 4. ACTIVIDADES DE FASE
+--    Actividades específicas que componen cada fase del proyecto.
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS actividades_fase (
+    id_actividad INT AUTO_INCREMENT PRIMARY KEY,
+    id_proyecto INT DEFAULT NULL,
+    nombre TEXT NOT NULL,
+    descripcion TEXT DEFAULT NULL,
+    id_fase INT NOT NULL,
+    id_ficha INT DEFAULT NULL,
+    INDEX idx_actividades_proyecto_id (id_proyecto),
+    INDEX idx_actividades_fase (id_fase),
+    CONSTRAINT fk_actividades_fase FOREIGN KEY (id_fase) 
+        REFERENCES fases_proyecto (id_fase) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================================
+-- 5. RELACIÓN: FASE - COMPETENCIA - RESULTADO
+--    Mapeo curricular de resultados de aprendizaje por actividad.
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS fase_competencia_resultado (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_proyecto INT DEFAULT NULL,
+    id_actividad INT NOT NULL,
+    id_ficha INT DEFAULT NULL,
+    id_competencia INT DEFAULT NULL,
+    id_resultado INT DEFAULT NULL,
+    nombre_competencia TEXT DEFAULT NULL,
+    nombre_resultado TEXT DEFAULT NULL,
+    codigo_competencia VARCHAR(20) DEFAULT NULL,
+    codigo_resultado VARCHAR(20) DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_fcr_proyecto_id (id_proyecto),
+    INDEX idx_fcr_actividad (id_actividad),
+    INDEX idx_fcr_codigo_res (codigo_resultado),
+    CONSTRAINT fk_fcr_actividad FOREIGN KEY (id_actividad) 
+        REFERENCES actividades_fase (id_actividad) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================================
+-- 6. FUNCIONARIOS
+--    Instructores o evaluadores registrados en SofíaPlus.
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS funcionarios (
+    documento INT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================================
+-- 7. APRENDICES
+--    Estudiantes matriculados asociados a una ficha.
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS aprendices (
+    documento VARCHAR(255) PRIMARY KEY,
+    tipo_documento VARCHAR(255) NOT NULL,
+    nombres VARCHAR(255) NOT NULL,
+    apellidos VARCHAR(255) NOT NULL,
+    estado ENUM('En formación', 'Retirado', 'Trasladado', 'Egresado') NOT NULL DEFAULT 'En formación',
+    id_ficha INT NOT NULL,
+    INDEX idx_aprendices_ficha (id_ficha),
+    INDEX idx_aprendices_estado (estado),
+    CONSTRAINT fk_aprendices_ficha FOREIGN KEY (id_ficha) 
+        REFERENCES programas (id_ficha) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================================
+-- 8. JUICIOS EVALUATIVOS
+--    Juicio evaluativo emitido por un instructor a un aprendiz.
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS juicios (
+    id_juicio INT AUTO_INCREMENT PRIMARY KEY,
+    tipo_juicio ENUM('Aprobado', 'Por evaluar', 'No aprobado') NOT NULL,
+    fecha_juicio DATETIME NOT NULL,
+    id_funcionario INT NOT NULL,
+    id_ficha INT DEFAULT NULL,
+    documento_aprendiz VARCHAR(255) DEFAULT NULL,
+    INDEX idx_juicios_funcionario (id_funcionario),
+    INDEX idx_juicios_ficha (id_ficha),
+    INDEX idx_juicios_aprendiz (documento_aprendiz),
+    INDEX idx_juicios_tipo (tipo_juicio),
+    CONSTRAINT fk_juicios_funcionario FOREIGN KEY (id_funcionario) 
+        REFERENCES funcionarios (documento) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================================
+-- 9. RESULTADOS DE APRENDIZAJE EVALUADOS
+--    Resultados específicos vinculados a un juicio evaluativo.
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS resultados (
+    id_resultado INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(255) DEFAULT NULL,
+    nombre TEXT NOT NULL,
+    id_juicio INT NOT NULL,
+    INDEX idx_resultados_juicio (id_juicio),
+    INDEX idx_resultados_codigo (codigo),
+    CONSTRAINT fk_resultados_juicio FOREIGN KEY (id_juicio) 
+        REFERENCES juicios (id_juicio) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================================
+-- 10. COMPETENCIAS DEL PLAN DEL APRENDIZ
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS competencias (
+    id_competencia INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(255) DEFAULT NULL,
+    nombre TEXT NOT NULL,
+    id_aprendiz VARCHAR(255) NOT NULL,
+    id_ficha INT DEFAULT NULL,
+    id_resultado INT NOT NULL,
+    INDEX idx_competencias_aprendiz (id_aprendiz),
+    INDEX idx_competencias_resultado (id_resultado),
+    INDEX idx_competencias_ficha (id_ficha),
+    CONSTRAINT fk_competencias_aprendiz FOREIGN KEY (id_aprendiz) 
+        REFERENCES aprendices (documento) ON DELETE CASCADE,
+    CONSTRAINT fk_competencias_resultado FOREIGN KEY (id_resultado) 
+        REFERENCES resultados (id_resultado) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================================
+-- 11. TRABAJOS DE IMPORTACIÓN
+--     Trazabilidad de importaciones en segundo plano (Excel / PDF).
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS trabajos_importacion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tipo VARCHAR(50) NOT NULL COMMENT 'excel_aprendices, pdf_fases',
+    ruta_archivo VARCHAR(255) NOT NULL,
+    estado ENUM('pendiente', 'procesando', 'completado', 'error') DEFAULT 'pendiente',
+    progreso INT DEFAULT 0,
+    resultado LONGTEXT DEFAULT NULL CHECK (json_valid(resultado)),
+    errores TEXT DEFAULT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==========================================================
+-- 12. VISTAS DEL SISTEMA (OPTIMIZACIÓN PARA DASHBOARD)
+-- ==========================================================
+
+-- Vista 1: Indicadores globales del Dashboard
+CREATE OR REPLACE VIEW v_dashboard_indicadores AS
+SELECT 
+    (SELECT COUNT(*) FROM aprendices WHERE estado = 'En formación') AS total_aprendices_activos,
+    (SELECT COUNT(*) FROM aprendices WHERE estado = 'Retirado') AS total_retirados,
+    (SELECT COUNT(*) FROM aprendices WHERE estado = 'Trasladado') AS total_trasladados,
+    (SELECT COUNT(*) FROM juicios WHERE tipo_juicio = 'Aprobado') AS total_juicios_aprobados,
+    (SELECT COUNT(*) FROM juicios WHERE tipo_juicio = 'Por evaluar') AS total_juicios_por_evaluar,
+    (SELECT COUNT(*) FROM juicios WHERE tipo_juicio = 'No aprobado') AS total_juicios_no_aprobados,
+    (SELECT COUNT(*) FROM programas) AS total_programas,
+    (SELECT COUNT(*) FROM funcionarios) AS total_funcionarios;
+
+-- Vista 2: Porcentaje de aprobación por competencia
+CREATE OR REPLACE VIEW v_aprobacion_por_competencia AS
+SELECT 
+    c.nombre AS competencia,
+    COUNT(c.id_competencia) AS total_evaluaciones,
+    SUM(j.tipo_juicio = 'Aprobado') AS aprobadas,
+    ROUND(SUM(j.tipo_juicio = 'Aprobado') * 100.0 / NULLIF(COUNT(c.id_competencia), 0), 2) AS porcentaje_aprobacion
+FROM competencias c
+JOIN resultados r ON c.id_resultado = r.id_resultado
+JOIN juicios j ON r.id_juicio = j.id_juicio
+GROUP BY c.nombre;
+
+-- Vista 3: Resumen por aprendiz
+CREATE OR REPLACE VIEW v_resumen_aprendiz AS
+SELECT 
+    a.documento,
+    CONCAT(a.nombres, ' ', a.apellidos) AS nombre_completo,
+    a.estado,
+    p.nombre AS programa,
+    COUNT(c.id_competencia) AS total_competencias,
+    SUM(j.tipo_juicio = 'Aprobado') AS aprobados,
+    SUM(j.tipo_juicio = 'Por evaluar') AS por_evaluar,
+    SUM(j.tipo_juicio = 'No aprobado') AS no_aprobados,
+    ROUND(SUM(j.tipo_juicio = 'Aprobado') * 100.0 / NULLIF(COUNT(c.id_competencia), 0), 2) AS porcentaje_avance
+FROM aprendices a
+JOIN programas p ON a.id_ficha = p.id_ficha
+JOIN competencias c ON a.documento = c.id_aprendiz
+JOIN resultados r ON c.id_resultado = r.id_resultado
+JOIN juicios j ON r.id_juicio = j.id_juicio
+GROUP BY a.documento, a.nombres, a.apellidos, a.estado, p.nombre;
