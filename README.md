@@ -19,6 +19,7 @@ Desarrollado en PHP nativo 8.2 bajo una arquitectura **MVC profesional**, con se
 | 📜 [Registro de Cambios](CHANGELOG.md) | Historial detallado de versiones y mejoras (v1.0.0 a v1.3.0) |
 | 📋 [Plan de Implementación](docs/PLAN_DE_IMPLEMENTACION.md) | Fases estratégicas, cronograma y objetivos de evolución |
 | 📖 [Documentación Técnica](docs/documentacion-tecnica.md) | Componentes, esquema de base de datos relacional y endpoints |
+| 🗄️ [Diccionario de Tablas](docs/DICCIONARIO_TABLAS.md) | Explicación exhaustiva de cada tabla, campos, propósitos y relaciones |
 | 📋 [Especificación de Requisitos](docs/Especificacion_Requisitos.md) | Requisitos Funcionales (RF), No Funcionales (RNF) y alcance |
 | 🚀 [Manual de Despliegue VPS](docs/DESPLIEGUE_VPS.md) | Guía de instalación y actualización en servidores VPS con Docker y Nginx |
 | 🏗️ [Arquitectura y Seguridad](docs/ARQUITECTURA_Y_SEGURIDAD.md) | Diagramas MVC, flujo de datos Sofia Plus + PDF y seguridad HTTP |
