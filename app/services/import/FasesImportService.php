@@ -13,6 +13,7 @@ class FasesImportService {
     public function import(array $data, ?int $idFicha): array {
         $results = [
             'ok'                     => false,
+            'id_proyecto'            => null,
             'fases_insertadas'       => 0,
             'actividades_insertadas' => 0,
             'relaciones_insertadas'  => 0,
@@ -23,69 +24,109 @@ class FasesImportService {
         try {
             $this->db->beginTransaction();
 
-            if ($idFicha) {
-                $this->db->prepare("DELETE FROM fase_competencia_resultado WHERE id_ficha = ?")->execute([$idFicha]);
-                $this->db->prepare("DELETE FROM actividades_fase WHERE id_ficha = ?")->execute([$idFicha]);
-                $this->db->prepare("DELETE FROM fases_proyecto WHERE id_ficha = ?")->execute([$idFicha]);
+            $ib = $data['informacion_basica'] ?? [];
+            $codSofia    = !empty($ib['codigo_programa_sofia']) ? trim($ib['codigo_programa_sofia']) : null;
+            $nombreProg  = !empty($ib['programa_formacion']) ? trim($ib['programa_formacion']) : null;
+            $nombreProy  = !empty($ib['nombre_proyecto']) ? trim($ib['nombre_proyecto']) : ($nombreProg ?: 'Proyecto Formativo');
+            $centro      = !empty($ib['centro_formacion']) ? trim($ib['centro_formacion']) : null;
+            $regional    = !empty($ib['regional']) ? trim($ib['regional']) : null;
+            $tiempoMeses = isset($ib['tiempo_estimado_meses']) ? (int)$ib['tiempo_estimado_meses'] : null;
+            $totRes      = isset($ib['total_resultados_programa']) ? (int)$ib['total_resultados_programa'] : null;
+
+            // 0. Buscar si el proyecto formativo ya existe por código SOFIA o nombre de proyecto
+            $idProyecto = null;
+            if ($codSofia) {
+                $stP = $this->db->prepare("SELECT id_proyecto FROM proyectos_formativos WHERE codigo_programa_sofia = ? LIMIT 1");
+                $stP->execute([$codSofia]);
+                $idProyecto = $stP->fetchColumn() ?: null;
+            }
+            if (!$idProyecto && $nombreProy) {
+                $stP = $this->db->prepare("SELECT id_proyecto FROM proyectos_formativos WHERE nombre_proyecto = ? LIMIT 1");
+                $stP->execute([$nombreProy]);
+                $idProyecto = $stP->fetchColumn() ?: null;
             }
 
-            // 0. Programa info
-            if ($idFicha && !empty($data['informacion_basica'])) {
-                $ib = $data['informacion_basica'];
-                $this->db->prepare(
-                    "INSERT INTO programas (id_ficha, nombre, codigo_programa_sofia, nombre_proyecto,
-                                            centro_formacion, regional, tiempo_estimado_meses, total_resultados)
-                     VALUES (:f, :n, :cs, :np, :cf, :re, :te, :tr)
-                     ON DUPLICATE KEY UPDATE
-                       codigo_programa_sofia  = VALUES(codigo_programa_sofia),
-                       nombre_proyecto        = VALUES(nombre_proyecto),
-                       centro_formacion       = VALUES(centro_formacion),
-                       regional               = VALUES(regional),
-                       tiempo_estimado_meses  = VALUES(tiempo_estimado_meses),
-                       total_resultados       = VALUES(total_resultados)"
-                )->execute([
-                    ':f'  => $idFicha,
-                    ':n'  => $ib['programa_formacion'] ?? $ib['nombre_proyecto'] ?? 'Sin nombre',
-                    ':cs' => $ib['codigo_programa_sofia']  ?? null,
-                    ':np' => $ib['nombre_proyecto']         ?? null,
-                    ':cf' => $ib['centro_formacion']        ?? null,
-                    ':re' => $ib['regional']                ?? null,
-                    ':te' => isset($ib['tiempo_estimado_meses']) ? (int)$ib['tiempo_estimado_meses'] : null,
-                    ':tr' => isset($ib['total_resultados_programa']) ? (int)$ib['total_resultados_programa'] : null,
+            if ($idProyecto) {
+                // Actualizar datos del proyecto
+                $stUp = $this->db->prepare("
+                    UPDATE proyectos_formativos SET
+                        codigo_programa_sofia = COALESCE(:cs, codigo_programa_sofia),
+                        nombre_programa       = COALESCE(:np, nombre_programa),
+                        nombre_proyecto       = :proy,
+                        centro_formacion      = COALESCE(:cf, centro_formacion),
+                        regional              = COALESCE(:re, regional),
+                        tiempo_estimado_meses = COALESCE(:te, tiempo_estimado_meses),
+                        total_resultados      = COALESCE(:tr, total_resultados)
+                    WHERE id_proyecto = :id
+                ");
+                $stUp->execute([
+                    ':cs'   => $codSofia,
+                    ':np'   => $nombreProg,
+                    ':proy' => $nombreProy,
+                    ':cf'   => $centro,
+                    ':re'   => $regional,
+                    ':te'   => $tiempoMeses,
+                    ':tr'   => $totRes,
+                    ':id'   => $idProyecto,
                 ]);
-                $results['detalle'][] = "✓ Datos del programa actualizados en programas (ficha $idFicha)";
+                $results['detalle'][] = "✓ Proyecto formativo existente actualizado (ID: $idProyecto)";
+            } else {
+                // Insertar nuevo proyecto formativo independiente
+                $stIns = $this->db->prepare("
+                    INSERT INTO proyectos_formativos (
+                        codigo_programa_sofia, nombre_programa, nombre_proyecto,
+                        centro_formacion, regional, tiempo_estimado_meses, total_resultados
+                    ) VALUES (:cs, :np, :proy, :cf, :re, :te, :tr)
+                ");
+                $stIns->execute([
+                    ':cs'   => $codSofia,
+                    ':np'   => $nombreProg,
+                    ':proy' => $nombreProy,
+                    ':cf'   => $centro,
+                    ':re'   => $regional,
+                    ':te'   => $tiempoMeses,
+                    ':tr'   => $totRes,
+                ]);
+                $idProyecto = (int)$this->db->lastInsertId();
+                $results['detalle'][] = "✓ Nuevo proyecto formativo registrado (ID: $idProyecto)";
             }
+
+            $results['id_proyecto'] = $idProyecto;
+
+            // Asociar ficha si fue provista
+            if ($idFicha) {
+                $stProg = $this->db->prepare("UPDATE programas SET id_proyecto = :p WHERE id_ficha = :f");
+                $stProg->execute([':p' => $idProyecto, ':f' => $idFicha]);
+                $results['detalle'][] = "✓ Ficha $idFicha asociada al proyecto formativo $idProyecto";
+            }
+
+            // Limpiar datos previos de fases/actividades de ESTE PROYECTO para recargar limpio
+            $this->db->prepare("DELETE FROM fase_competencia_resultado WHERE id_proyecto = ?")->execute([$idProyecto]);
+            $this->db->prepare("DELETE FROM actividades_fase WHERE id_proyecto = ?")->execute([$idProyecto]);
+            $this->db->prepare("DELETE FROM fases_proyecto WHERE id_proyecto = ?")->execute([$idProyecto]);
 
             // 1. Fases
             $faseMap = []; 
-            $stmtCheckFase = $this->db->prepare("SELECT id_fase FROM fases_proyecto WHERE nombre_fase = :n AND (id_ficha = :f OR (:f2 IS NULL AND id_ficha IS NULL)) LIMIT 1");
-            $stmtInsertFase = $this->db->prepare("INSERT INTO fases_proyecto (nombre_fase, orden, descripcion, id_ficha) VALUES (:n, :o, :d, :f)");
+            $stmtInsertFase = $this->db->prepare("INSERT INTO fases_proyecto (nombre_fase, orden, descripcion, id_proyecto, id_ficha) VALUES (:n, :o, :d, :p, :f)");
 
             foreach ($data['fases'] ?? [] as $fase) {
                 $nombre = trim($fase['nombre_fase'] ?? '');
                 if (!$nombre) continue;
 
-                $stmtCheckFase->execute([':n' => $nombre, ':f' => $idFicha, ':f2' => $idFicha]);
-                $existing = $stmtCheckFase->fetch();
-
-                if ($existing) {
-                    $faseMap[$nombre] = (int)$existing['id_fase'];
-                } else {
-                    $stmtInsertFase->execute([
-                        ':n' => $nombre,
-                        ':o' => (int)($fase['orden'] ?? 1),
-                        ':d' => $fase['descripcion'] ?? '',
-                        ':f' => $idFicha,
-                    ]);
-                    $faseMap[$nombre] = (int)$this->db->lastInsertId();
-                    $results['fases_insertadas']++;
-                }
+                $stmtInsertFase->execute([
+                    ':n' => $nombre,
+                    ':o' => (int)($fase['orden'] ?? 1),
+                    ':d' => $fase['descripcion'] ?? '',
+                    ':p' => $idProyecto,
+                    ':f' => $idFicha,
+                ]);
+                $faseMap[$nombre] = (int)$this->db->lastInsertId();
+                $results['fases_insertadas']++;
             }
 
             // 2. Actividades
             $actMap = []; 
-            $stmtCheckAct = $this->db->prepare("SELECT id_actividad FROM actividades_fase WHERE nombre = :n AND id_fase = :f LIMIT 1");
-            $stmtInsertAct = $this->db->prepare("INSERT INTO actividades_fase (nombre, descripcion, id_fase, id_ficha) VALUES (:n, :d, :f, :fi)");
+            $stmtInsertAct = $this->db->prepare("INSERT INTO actividades_fase (nombre, descripcion, id_fase, id_proyecto, id_ficha) VALUES (:n, :d, :f, :p, :fi)");
 
             foreach ($data['actividades'] ?? [] as $act) {
                 $faseNombre  = trim($act['fase_nombre'] ?? '');
@@ -97,47 +138,32 @@ class FasesImportService {
                 $mapKey = $faseNombre . '||' . $actNombre;
                 if (isset($actMap[$mapKey])) continue;
 
-                $stmtCheckAct->execute([':n' => $actNombre, ':f' => $idFaseLocal]);
-                $existing = $stmtCheckAct->fetch();
-
-                if ($existing) {
-                    $actMap[$mapKey] = (int)$existing['id_actividad'];
-                } else {
-                    $stmtInsertAct->execute([
-                        ':n'  => $actNombre,
-                        ':d'  => $act['descripcion'] ?? '',
-                        ':f'  => $idFaseLocal,
-                        ':fi' => $idFicha,
-                    ]);
-                    $actMap[$mapKey] = (int)$this->db->lastInsertId();
-                    $results['actividades_insertadas']++;
-                }
+                $stmtInsertAct->execute([
+                    ':n'  => $actNombre,
+                    ':d'  => $act['descripcion'] ?? '',
+                    ':f'  => $idFaseLocal,
+                    ':p'  => $idProyecto,
+                    ':fi' => $idFicha,
+                ]);
+                $actMap[$mapKey] = (int)$this->db->lastInsertId();
+                $results['actividades_insertadas']++;
             }
 
             // 3. Relaciones (BULK INSERT)
             if (!empty($data['registros'])) {
                 $batchRelaciones = [];
                 $relInserted = [];
-                $hasCodigos = true;
 
-                try {
-                    $this->db->query("SELECT codigo_competencia FROM fase_competencia_resultado LIMIT 1");
-                } catch (\Exception $e) {
-                    $hasCodigos = false;
-                }
-
-                $flushRelaciones = function() use (&$batchRelaciones, &$results, $hasCodigos) {
+                $flushRelaciones = function() use (&$batchRelaciones, &$results) {
                     if (empty($batchRelaciones)) return;
                     $flat = [];
-                    if ($hasCodigos) {
-                        $placeholders = implode(',', array_fill(0, count($batchRelaciones), '(?,?,?,?,?,?)'));
-                        foreach ($batchRelaciones as $r) array_push($flat, $r['a'], $r['fi'], $r['nc'], $r['nr'], $r['cc'], $r['cr']);
-                        $sql = "INSERT INTO fase_competencia_resultado (id_actividad, id_ficha, nombre_competencia, nombre_resultado, codigo_competencia, codigo_resultado) VALUES $placeholders";
-                    } else {
-                        $placeholders = implode(',', array_fill(0, count($batchRelaciones), '(?,?,?,?)'));
-                        foreach ($batchRelaciones as $r) array_push($flat, $r['a'], $r['fi'], $r['nc'], $r['nr']);
-                        $sql = "INSERT INTO fase_competencia_resultado (id_actividad, id_ficha, nombre_competencia, nombre_resultado) VALUES $placeholders";
+                    $placeholders = implode(',', array_fill(0, count($batchRelaciones), '(?,?,?,?,?,?,?)'));
+                    foreach ($batchRelaciones as $r) {
+                        array_push($flat, $r['a'], $r['p'], $r['fi'], $r['nc'], $r['nr'], $r['cc'], $r['cr']);
                     }
+                    $sql = "INSERT INTO fase_competencia_resultado 
+                            (id_actividad, id_proyecto, id_ficha, nombre_competencia, nombre_resultado, codigo_competencia, codigo_resultado) 
+                            VALUES $placeholders";
 
                     try {
                         $this->db->prepare($sql)->execute($flat);
@@ -175,6 +201,7 @@ class FasesImportService {
 
                     $batchRelaciones[] = [
                         'a'  => $actId,
+                        'p'  => $idProyecto,
                         'fi' => $idFicha,
                         'nc' => $compNombre,
                         'nr' => $resNombre,

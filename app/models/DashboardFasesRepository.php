@@ -27,8 +27,9 @@ class DashboardFasesRepository extends BaseModel {
         $fcrFilter = '';
         $fcrParams = [];
         if ($idFicha) {
-            $fcrFilter = ' WHERE fcr.id_ficha = :id_ficha ';
+            $fcrFilter = ' WHERE (fcr.id_proyecto = (SELECT id_proyecto FROM programas WHERE id_ficha = :id_ficha) OR fcr.id_ficha = :id_ficha2) ';
             $fcrParams[':id_ficha'] = $idFicha;
+            $fcrParams[':id_ficha2'] = $idFicha;
         }
 
         $sqlCobertura = "SELECT 
@@ -72,8 +73,9 @@ class DashboardFasesRepository extends BaseModel {
         $fichaFilter = '';
         $params = [];
         if ($idFicha) {
-            $fichaFilter = ' AND fp.id_ficha = :id_ficha ';
+            $fichaFilter = ' AND (fp.id_proyecto = p.id_proyecto OR fp.id_ficha = :id_ficha) AND a.id_ficha = :id_ficha2 ';
             $params[':id_ficha'] = $idFicha;
+            $params[':id_ficha2'] = $idFicha;
         }
 
         $sql = "SELECT
@@ -99,7 +101,8 @@ class DashboardFasesRepository extends BaseModel {
         FROM fases_proyecto fp
         JOIN actividades_fase af            ON af.id_fase       = fp.id_fase
         JOIN fase_competencia_resultado fcr ON fcr.id_actividad = af.id_actividad
-        JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
+        JOIN programas p                    ON (p.id_proyecto = fp.id_proyecto OR p.id_ficha = fp.id_ficha)
+        JOIN aprendices a                   ON a.id_ficha       = p.id_ficha
                                            AND a.estado LIKE 'En formac%'
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio
@@ -123,8 +126,9 @@ class DashboardFasesRepository extends BaseModel {
             $params[':id_fase'] = $idFase;
         }
         if ($idFicha) {
-            $and .= ' AND fp.id_ficha = :id_ficha';
+            $and .= ' AND (fp.id_proyecto = p.id_proyecto OR fp.id_ficha = :id_ficha) AND a.id_ficha = :id_ficha2';
             $params[':id_ficha'] = $idFicha;
+            $params[':id_ficha2'] = $idFicha;
         }
 
         $sql = "SELECT fp.orden, fp.nombre_fase, fp.id_fase,
@@ -137,7 +141,8 @@ class DashboardFasesRepository extends BaseModel {
         FROM fases_proyecto fp
         JOIN actividades_fase af            ON af.id_fase       = fp.id_fase
         JOIN fase_competencia_resultado fcr ON fcr.id_actividad = af.id_actividad
-        JOIN aprendices a                   ON a.id_ficha = fp.id_ficha
+        JOIN programas p                    ON (p.id_proyecto = fp.id_proyecto OR p.id_ficha = fp.id_ficha)
+        JOIN aprendices a                   ON a.id_ficha       = p.id_ficha
                                            AND a.estado LIKE 'En formac%'
         LEFT JOIN (
             SELECT j.documento_aprendiz, r.codigo, j.tipo_juicio

@@ -107,24 +107,24 @@ function mostrarMensajeVacio(mensaje) {
   }
 }
 
-function seleccionarProyecto(id_ficha){
+function seleccionarProyecto(id_ficha_o_proyecto){
   if(!document.getElementById('proyectoContenedor')) return;
   
-  if(!id_ficha) {
+  if(!id_ficha_o_proyecto) {
     mostrarMensajeVacio("Selecciona un programa de formación en la parte superior para ver su proyecto formativo.");
     return;
   }
   
   // Si proyectosData aún no carga, intentarlo luego
   if(proyectosData.length === 0) {
-    setTimeout(() => seleccionarProyecto(id_ficha), 500);
+    setTimeout(() => seleccionarProyecto(id_ficha_o_proyecto), 400);
     return;
   }
   
-  const p = proyectosData.find(x => x.id_ficha == id_ficha);
+  const p = proyectosData.find(x => x.id_ficha == id_ficha_o_proyecto || x.id_proyecto == id_ficha_o_proyecto);
   
   if(!p) {
-    mostrarMensajeVacio("Este programa no tiene un proyecto formativo cargado.");
+    mostrarMensajeVacio("Este programa no tiene un proyecto formativo asociado.");
     return;
   }
   
@@ -136,11 +136,12 @@ function seleccionarProyecto(id_ficha){
   document.getElementById('pRegional').textContent = p.regional || '—';
   document.getElementById('pTiempo').textContent = p.tiempo_estimado_meses ? p.tiempo_estimado_meses + ' meses' : '—';
   
-  document.getElementById('btnEliminarProyecto').onclick = () => eliminarProyecto(id_ficha);
+  document.getElementById('btnEliminarProyecto').onclick = () => eliminarProyecto(p.id_proyecto || id_ficha_o_proyecto);
   
   document.getElementById('fasesContenedor').innerHTML = '<div class="text-center text-muted" style="padding: 20px;">Cargando resumen de fases...</div>';
   
-  fetch(`${API}&subaction=get_proyecto_detalle&id_ficha=${id_ficha}`).then(r=>r.json()).then(fases => {
+  const queryParam = p.id_proyecto ? `id_proyecto=${p.id_proyecto}` : `id_ficha=${id_ficha_o_proyecto}`;
+  fetch(`${API}&subaction=get_proyecto_detalle&${queryParam}`).then(r=>r.json()).then(fases => {
     let html = '';
     
     if(fases.length === 0) {
@@ -243,13 +244,17 @@ function seleccionarProyecto(id_ficha){
   });
 }
 
-function eliminarProyecto(id_ficha){
-  if(!confirm('¿Estás seguro de eliminar TODOS los datos del proyecto formativo de la ficha '+id_ficha+'?\n\n- Se eliminarán las fases, actividades y resultados importados.\n- NO se eliminarán los aprendices ni los juicios evaluativos.\n- Podrás volver a subir el PDF luego.')) return;
+function eliminarProyecto(id_proyecto_o_ficha){
+  if(!confirm('¿Estás seguro de eliminar este proyecto formativo?\n\n- Se eliminarán sus fases, actividades y resultados de aprendizaje curriculares.\n- NO se eliminarán los aprendices ni los juicios evaluativos de las fichas.\n- Las fichas asociadas quedarán desvinculadas sin perder ningún dato.')) return;
   
-  fetch(`${API}&subaction=delete_proyecto`,{method:'POST',body:JSON.stringify({id_ficha})}).then(r=>r.json()).then(d=>{
+  fetch(`${API}&subaction=delete_proyecto`,{
+    method:'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({id_proyecto: id_proyecto_o_ficha, id_ficha: id_proyecto_o_ficha})
+  }).then(r=>r.json()).then(d=>{
     if(d.ok){
       // 1. Actualizar estado local
-      proyectosData = (proyectosData || []).filter(x => x.id_ficha != id_ficha);
+      proyectosData = (proyectosData || []).filter(x => x.id_proyecto != id_proyecto_o_ficha && x.id_ficha != id_proyecto_o_ficha);
 
       // 2. Limpiar estado de fases/actividades seleccionadas
       currentFaseId = null;

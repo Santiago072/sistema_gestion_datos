@@ -3,6 +3,7 @@ require_once dirname(__DIR__, 2) . '/config/database.php';
 require_once dirname(__DIR__, 2) . '/config/seguridad.php';
 require_once dirname(__DIR__) . '/models/FasesModel.php';
 require_once dirname(__DIR__) . '/models/ProgramaModel.php';
+require_once dirname(__DIR__) . '/models/ProyectoModel.php';
 require_once dirname(__DIR__) . '/models/DashboardFasesRepository.php';
 require_once dirname(__DIR__) . '/services/import/FasesImportService.php';
 
@@ -10,12 +11,14 @@ class FasesController {
     private PDO $db;
     private FasesModel $fasesModel;
     private ProgramaModel $programaModel;
+    private ProyectoModel $proyectoModel;
     private DashboardFasesRepository $dashboardFasesRepo;
 
     public function __construct(PDO $db) {
         $this->db = $db;
         $this->fasesModel = new FasesModel($db);
         $this->programaModel = new ProgramaModel($db);
+        $this->proyectoModel = new ProyectoModel($db);
         $this->dashboardFasesRepo = new DashboardFasesRepository($db);
     }
 
@@ -107,18 +110,45 @@ class FasesController {
                     break;
 
                 case 'get_proyecto_detalle':
-                    $idFicha = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
-                    jsonResponse($this->fasesModel->getProyectoDetalle($idFicha));
+                    $idProyecto = !empty($_GET['id_proyecto']) ? (int)$_GET['id_proyecto'] : null;
+                    $idFicha    = !empty($_GET['id_ficha']) ? (int)$_GET['id_ficha'] : null;
+                    $target     = $idProyecto ?: $idFicha;
+                    jsonResponse($this->fasesModel->getProyectoDetalle((int)$target));
                     break;
 
                 case 'delete_proyecto':
                     $data = json_decode(file_get_contents('php://input'), true);
-                    $idFicha = !empty($data['id_ficha']) ? (int)$data['id_ficha'] : null;
-                    if ($idFicha) {
-                        $this->fasesModel->deleteProyecto($idFicha);
+                    $idProyecto = !empty($data['id_proyecto']) ? (int)$data['id_proyecto'] : null;
+                    $idFicha    = !empty($data['id_ficha']) ? (int)$data['id_ficha'] : null;
+                    $target     = $idProyecto ?: $idFicha;
+                    if ($target) {
+                        $this->fasesModel->deleteProyecto((int)$target);
                         jsonResponse(['ok' => true]);
                     } else {
-                        jsonResponse(['ok' => false, 'error' => 'ID de ficha no proporcionado'], 400);
+                        jsonResponse(['ok' => false, 'error' => 'ID de proyecto o ficha no proporcionado'], 400);
+                    }
+                    break;
+
+                case 'asociar_ficha':
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $idFicha    = !empty($data['id_ficha']) ? (int)$data['id_ficha'] : null;
+                    $idProyecto = !empty($data['id_proyecto']) ? (int)$data['id_proyecto'] : null;
+                    if ($idFicha && $idProyecto) {
+                        $this->proyectoModel->asociarFicha($idFicha, $idProyecto);
+                        jsonResponse(['ok' => true]);
+                    } else {
+                        jsonResponse(['ok' => false, 'error' => 'Faltan parámetros requeridos'], 400);
+                    }
+                    break;
+
+                case 'desasociar_ficha':
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $idFicha = !empty($data['id_ficha']) ? (int)$data['id_ficha'] : null;
+                    if ($idFicha) {
+                        $this->proyectoModel->desasociarFicha($idFicha);
+                        jsonResponse(['ok' => true]);
+                    } else {
+                        jsonResponse(['ok' => false, 'error' => 'Falta id_ficha'], 400);
                     }
                     break;
 

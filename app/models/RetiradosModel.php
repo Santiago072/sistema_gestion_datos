@@ -31,7 +31,7 @@ class RetiradosModel extends BaseModel {
                     FROM fase_competencia_resultado fcr2
                     JOIN actividades_fase af2 ON fcr2.id_actividad = af2.id_actividad
                     JOIN fases_proyecto fp2 ON af2.id_fase = fp2.id_fase
-                    WHERE fcr2.id_ficha = p.id_ficha
+                    WHERE (fcr2.id_proyecto = p.id_proyecto OR fcr2.id_ficha = p.id_ficha)
                       AND (
                           (r.codigo IS NOT NULL AND r.codigo != '' AND fcr2.codigo_resultado = r.codigo)
                           OR (fcr2.codigo_competencia IS NOT NULL AND fcr2.codigo_competencia != '' AND (c.codigo = fcr2.codigo_competencia OR c.nombre LIKE CONCAT('%', fcr2.codigo_competencia, '%')))

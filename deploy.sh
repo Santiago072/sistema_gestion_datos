@@ -35,9 +35,14 @@ echo ""
 echo "[4/5] Reconstruyendo y levantando contenedores Docker..."
 docker compose up -d --build
 
-# 5. Listo
+# 5. Ejecutar migraciones pendientes de base de datos en el contenedor
 echo ""
-echo "[5/5] Contenedores en línea."
+echo "[5/5] Aplicando migraciones de base de datos..."
+if [ -f "sql/migration_v4_proyectos_separados.sql" ]; then
+    echo "  -> Ejecutando migration_v4_proyectos_separados.sql..."
+    docker compose exec -T gestion_datos_db mysql -u root -p"${MYSQL_ROOT_PASSWORD:-root}" sena_juicios < sql/migration_v4_proyectos_separados.sql 2>/dev/null || \
+    docker compose exec -T gestion_datos_db mysql -u "${DB_USER:-sena_user}" -p"$DB_PASS_LOCAL" sena_juicios < sql/migration_v4_proyectos_separados.sql || true
+fi
 
 echo ""
 echo "========================================"
