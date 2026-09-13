@@ -6,6 +6,21 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.4.1] — 2026-09-12
+
+### ✨ Añadido
+- **Trazabilidad de Cortes de Reportes (`historial_cortes_reportes`):** Registro histórico con fecha de corte, fecha de subida, nombre de archivo y total de filas procesadas.
+- **Auto-detección y Confirmación de Fecha de Corte:** En la carga masiva, el sistema extrae automáticamente la fecha del nombre del archivo (`DDMMAAAA` o `AAAA-MM-DD`) y permite ajustarla antes de subir.
+- **Badge Dinámico de Corte en Dashboard:** Proyección en la cabecera superior con fecha de corte, fecha de subida y nombre completo del archivo fuente, visible únicamente al seleccionar una ficha de formación.
+- **Zona Horaria Oficial de Colombia (`America/Bogota` UTC-5):** Configuración nativa en PHP y MySQL (`SET time_zone = '-05:00'`) para timestamps y formateo de fechas con estándar colombiano (`DD/MM/YYYY hh:mm:ss a`).
+
+### ⚡ Optimizado
+- **Alineación Visual en Dashboard:** Ajuste horizontal estricto para el selector `Programa / Ficha:` con `white-space: nowrap`.
+- **Adaptabilidad de Temas:** Corrección de contraste en el input de fecha de corte para visualización limpia tanto en modo claro como oscuro.
+- **Nombre de Archivo Completo en Topbar:** Eliminación del truncado con puntos suspensivos para visualizar el nombre completo de los reportes cargados.
+
+---
+
 ## [1.4.0] — 2026-09-12
 
 ### ✨ Añadido

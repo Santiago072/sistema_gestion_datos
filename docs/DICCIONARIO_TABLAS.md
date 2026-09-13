@@ -191,6 +191,22 @@ Estas tres tablas conforman el **núcleo transaccional de evaluación**. Es sobr
 
 ---
 
+### 11. `historial_cortes_reportes`
+* **Propósito:** Registro cronológico y trazabilidad de los cortes mensuales o periódicos cargados mediante reportes Excel/CSV de Sofia Plus.
+* **Campos:**
+  - `id_corte` (INT, PK, AUTO_INCREMENT): Identificador único del corte.
+  - `id_ficha` (INT, FK, NULL): Ficha de caracterización a la que corresponde el reporte (permite seguimiento individualizado por ficha).
+  - `nombre_archivo` (VARCHAR(255)): Nombre del archivo importado (ej: `Reporte de Juicios Evaluativos - 06042026.xlsx`).
+  - `fecha_corte` (DATE): Fecha pedagógica de corte extraída automáticamente del nombre del archivo o ajustada por el usuario (ej: `2026-04-06`).
+  - `fecha_subida` (DATETIME): Marca temporal exacta en la que se realizó la importación al servidor bajo la zona horaria oficial `America/Bogota` (UTC-5).
+  - `total_filas` (INT): Cantidad total de registros evaluativos contenidos en el archivo.
+  - `estado` (VARCHAR(50)): Estado de la operación (`exitoso`, etc.).
+* **Comportamiento en el Dashboard:**
+  - Cuando se visualiza *"Todos los programas"*, el corte superior se oculta automáticamente para mantener la vista global limpia.
+  - Al seleccionar una ficha específica, la cabecera del Dashboard proyecta el badge con la fecha de corte, fecha de subida y nombre completo del archivo fuente.
+
+---
+
 ## 🔗 Cómo Interactúan las Dos Fuentes de Datos
 
 ```

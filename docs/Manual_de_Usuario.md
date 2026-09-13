@@ -18,12 +18,18 @@ La barra superior permite acceder rápidamente a todos los módulos del sistema:
 ## 📊 2. Tablero de Control y Curva de Supervivencia
 
 1. **Selector de Programa:** En la parte superior del Dashboard, puedes seleccionar una ficha o programa específico para filtrar todas las métricas en tiempo real, o seleccionar *Todos los Programas* para una vista consolidada.
-2. **KPIs:** Muestra el número de aprendices activos, juicios aprobados, juicios pendientes por evaluar, aprendices retirados y trasladados.
-3. **Curva de Retiros por Competencia:**
+2. **Badge Superior de Corte de Reporte:** 
+   - Cuando seleccionas una **Ficha de Formación específica**, en la parte superior derecha de la cabecera se proyecta automáticamente el **Badge de Corte Activo**, informando:
+     - 📅 **Fecha de Corte Pedagógico:** (ej: `06/04/2026`).
+     - 🕒 **Fecha y Hora de Subida:** bajo horario de Colombia (ej: `12/09/2026 08:30:54 PM`).
+     - 📄 **Nombre Completo del Archivo Fuente:** (ej: `Reporte de Juicios Evaluativos - 06042026.xlsx`).
+   - Al seleccionar *"Todos los programas"*, este indicador se oculta de forma limpia, ya que los cortes pertenecen a cada ficha individualmente.
+3. **KPIs:** Muestra el número de aprendices activos, juicios aprobados, juicios pendientes por evaluar, aprendices retirados y trasladados.
+4. **Curva de Retiros por Competencia:**
    - La gráfica muestra la supervivencia de aprendices a lo largo de las competencias ordenadas cronológicamente.
    - Al pasar el cursor por encima de un punto, verás la **Fase del proyecto**, el **Nombre de la competencia**, la **Fecha de evaluación**, la **Cantidad de aprendices activos** y la lista de **Aprendices que salieron** en esa fecha junto con su **Instructor evaluador**.
-4. **Tabla de Retiros:** Ubicada debajo del gráfico, detalla en 7 columnas cada punto de salida registrado.
-5. **Auditoría de Instructores:** Consulta el consolidado de juicios evaluados por cada docente y la fecha exacta de su primer y último registro.
+5. **Tabla de Retiros:** Ubicada debajo del gráfico, detalla en 7 columnas cada punto de salida registrado.
+6. **Auditoría de Instructores:** Consulta el consolidado de juicios evaluados por cada docente y la fecha exacta de su primer y último registro.
 
 ---
 
@@ -46,7 +52,8 @@ La barra superior permite acceder rápidamente a todos los módulos del sistema:
 
 1. Ingresa a la sección **Carga de Datos**.
 2. Arrastra tu archivo `.xlsx`, `.xls` o `.csv` descargado de Sofia Plus.
-3. El sistema procesará las filas en lotes automáticos (`batch de 500 registros`), actualizando aprendices, fichas, competencias, resultados y funcionarios sin duplicar registros.
+3. **Confirmación de Fecha de Corte:** El sistema auto-detecta la fecha de corte analizando el nombre del archivo (formatos `DDMMAAAA` o `AAAA-MM-DD`). Puedes verificarla o modificarla con el selector de calendario si requieres registrar una fecha de corte diferente.
+4. Haz clic en **Subir y Procesar**: el sistema procesará las filas en lotes automáticos (`batch de 500 registros`), fusionando los juicios evaluativos de manera inteligente (protegiendo los aprobados vigentes) y registrando el corte en el historial de trazabilidad sin duplicados.
 
 ---
 

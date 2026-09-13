@@ -1,4 +1,4 @@
-# 📊 Sistema de Gestión de Datos — SENA (v1.3.0)
+# 📊 Sistema de Gestión de Datos — SENA (v1.4.1)
 
 [![PHP Version](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![Database](https://img.shields.io/badge/Database-MariaDB%2010.11-003545?logo=mariadb&logoColor=white)](https://mariadb.org/)
@@ -45,6 +45,8 @@ Desarrollado en PHP nativo 8.2 bajo una arquitectura **MVC profesional**, con se
 ### 📥 3. Carga Masiva y Procesamiento por Lotes
 * **Procesamiento de 500 Filas por Bloque:** Importa reportes `.xlsx`, `.xls` y `.csv` de gran tamaño sin exceder los límites de memoria del servidor.
 * **Detección Automática de Columnas:** Mapeo inteligente de encabezados independientemente del orden o formato.
+* **Trazabilidad y Fechas de Corte:** Extracción automática de la fecha del archivo, confirmación con selector de fecha y registro histórico en `historial_cortes_reportes` con zona horaria de Colombia.
+* **Fusión Inteligente sin Retrocesos:** Los juicios aprobados ya existentes se protegen permanentemente, incorporando únicamente nuevos avances.
 
 ### 🔍 4. Filtro Avanzado, Auditoría y Gestión
 * **Auditoría por Instructor:** Monitoreo del total de juicios registrados con fecha real del primer y último registro evaluado.
